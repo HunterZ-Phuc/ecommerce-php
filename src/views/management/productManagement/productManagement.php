@@ -1,4 +1,7 @@
 <?php
+error_reporting(0);
+ini_set('display_errors', 0);
+
 require_once 'C:/xampp/htdocs/ecommerce-php/src/utils/db_connect.php';
 require_once 'C:/xampp/htdocs/ecommerce-php/src/controllers/ProductController.php';
 
@@ -10,22 +13,87 @@ $productController = new ProductController($con);
 
 // Xử lý các action
 if (isset($_POST['action'])) {
-    switch ($_POST['action']) {
-        case 'add':
-            $productController->addProduct($_POST);
-            break;
-        case 'edit':
-            $productController->updateProduct($_POST);
-            break;
-        case 'delete':
-            $productController->deleteProduct($_POST['id']);
-            break;
-        case 'add_variants':
-            if (!isset($_POST['productId'])) {
-                throw new Exception('Thiếu productId');
-            }
-            $productController->addProductVariants($_POST['productId'], $_POST);
-            break;
+    try {
+        header('Content-Type: application/json; charset=utf-8');
+        
+        switch ($_POST['action']) {
+            case 'add_product':
+                // Kiểm tra và xử lý dữ liệu sản phẩm
+                if (!isset($_POST['productName']) || !isset($_POST['category'])) {
+                    throw new Exception('Thiếu thông tin sản phẩm cơ bản');
+                }
+
+                // Xử lý hasVariants
+                $hasVariants = isset($_POST['hasVariants']) && $_POST['hasVariants'] === 'true';
+                
+                // Nếu có biến thể, set giá và số lượng về 0
+                if ($hasVariants) {
+                    $_POST['price'] = 0;
+                    $_POST['stockQuantity'] = 0;
+                }
+
+                // Thêm sản phẩm và lấy ID
+                $productId = $productController->addProduct($_POST);
+                
+                echo json_encode([
+                    'success' => true,
+                    'productId' => $productId,
+                    'message' => 'Thêm sản phẩm thành công'
+                ]);
+                break;
+
+            case 'add_variants':
+                if (!isset($_POST['productId'])) {
+                    throw new Exception('Thiếu productId');
+                }
+
+                // Kiểm tra dữ liệu biến thể
+                if (!isset($_POST['variant_combinations']) || 
+                    !isset($_POST['variant_prices']) || 
+                    !isset($_POST['variant_quantities'])) {
+                    throw new Exception('Thiếu thông tin biến thể');
+                }
+
+                $result = $productController->addProductVariants(
+                    $_POST['productId'],
+                    [
+                        'combinations' => $_POST['variant_combinations'],
+                        'prices' => $_POST['variant_prices'],
+                        'quantities' => $_POST['variant_quantities']
+                    ]
+                );
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Thêm biến thể thành công'
+                ]);
+                break;
+
+            case 'start_transaction':
+                $productController->startTransaction();
+                echo json_encode(['success' => true]);
+                break;
+
+            case 'commit_transaction':
+                $productController->commitTransaction();
+                echo json_encode(['success' => true]);
+                break;
+
+            case 'rollback_transaction':
+                $productController->rollbackTransaction();
+                echo json_encode(['success' => true]);
+                break;
+            default:
+                throw new Exception('Action không hợp lệ');
+        }
+        exit;
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+        exit;
     }
 }
 
@@ -39,7 +107,7 @@ $products = $productController->getAllProducts();
     <title>Quản Lý Sản Phẩm</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="../../assets/bootstrap-5.3.3-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../../assets/bootstrap-5.3.3-dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         .variant-type .card {
@@ -122,7 +190,7 @@ $products = $productController->getAllProducts();
             </div>
             <div class="modal-body">
                 <form id="productForm" enctype="multipart/form-data">
-                    <input type="hidden" name="action" value="add">
+                    <input type="hidden" name="action" value="add_product">
                     <input type="hidden" name="id" value="">
                     
                     <div class="row mb-3">
@@ -144,6 +212,11 @@ $products = $productController->getAllProducts();
                     <div class="mb-3">
                         <label>Mô Tả</label>
                         <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Xuất xứ</label>
+                        <input type="text" name="origin" class="form-control" value="Việt Nam" required>
                     </div>
 
                     <div id="basicPricing" class="row mb-3">
@@ -197,7 +270,7 @@ $products = $productController->getAllProducts();
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-primary" onclick="saveProduct()">Lưu</button>
+                <button type="button" class="btn btn-primary" onclick="saveProduct()">Lưu sản phẩm</button>
             </div>
         </div>
     </div>
@@ -215,7 +288,7 @@ $products = $productController->getAllProducts();
                 <form id="variantPricingForm">
                     <input type="hidden" name="productId" id="variantProductId">
                     <div class="table-responsive">
-                        <table class="table table-bordered">
+                        <table class="table table-bordered" id="variantPricingTable">
                             <thead>
                                 <tr>
                                     <th>Biến Thể</th>
@@ -233,13 +306,14 @@ $products = $productController->getAllProducts();
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-primary" onclick="saveVariantPricing()">Lưu</button>
+                <button type="button" class="btn btn-primary" onclick="saveVariantPricing()">Lưu biến thể</button>
             </div>
         </div>
     </div>
 </div>
 
-<script src="../../assets/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="../../../assets/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
 <script>
 let variantTypeCount = 0;
 
@@ -299,11 +373,13 @@ function generateVariantCombinations() {
     const variantTypes = [];
     document.querySelectorAll('.variant-type').forEach(type => {
         const name = type.querySelector('input[name="variant_names[]"]').value;
-        const values = type.querySelector('input[name="variant_values[]"]').value.split(',').map(v => v.trim());
+        const values = type.querySelector('input[name="variant_values[]"]').value
+            .split(',')
+            .map(v => v.trim())
+            .filter(v => v); // Lọc bỏ giá trị rỗng
         variantTypes.push({ name, values });
     });
 
-    // Hàm đệ quy để tạo tổ hợp
     function combine(arrays, current = [], index = 0) {
         if (index === arrays.length) {
             return [current];
@@ -334,7 +410,7 @@ function completeVariants() {
         return;
     }
 
-    // Kiểm tra các trường bắt buộc
+    // Kiểm tra các trường b���t buộc
     let isValid = true;
     variantTypes.forEach(type => {
         const name = type.querySelector('input[name="variant_names[]"]').value;
@@ -349,7 +425,7 @@ function completeVariants() {
         return;
     }
 
-    // Hiển thị modal ngay lập tức mà không lưu sản phẩm
+    // Hiển thị modal nhập giá và số lượng
     showVariantPricingModal();
 }
 
@@ -362,11 +438,14 @@ function showVariantPricingModal() {
         const tr = document.createElement('tr');
         const variantName = combo.map(v => `${v.type}: ${v.value}`).join(' - ');
         
+        // Tạo JSON string an toàn cho combination
+        const comboJson = JSON.stringify(combo).replace(/"/g, '&quot;');
+        
         tr.innerHTML = `
             <td>${variantName}</td>
             <td>
                 <input type="number" name="variant_prices[]" class="form-control" required min="0">
-                <input type="hidden" name="variant_combinations[]" value="${JSON.stringify(combo)}">
+                <input type="hidden" name="variant_combinations[]" value="${comboJson}">
             </td>
             <td>
                 <input type="number" name="variant_quantities[]" class="form-control" required min="0">
@@ -382,44 +461,97 @@ function showVariantPricingModal() {
     modal.show();
 }
 
-async function saveVariantPricing() {
-    const variantForm = document.getElementById('variantPricingForm');
-    const formData = new FormData(variantForm);
-    
+function saveVariantPricing() {
     try {
-        // Thêm thông tin biến thể vào formData
-        document.querySelectorAll('input[type="file"][name^="variant_images_"]').forEach((input, index) => {
-            if (input.files[0]) {
-                formData.append(`variant_images_${index}`, input.files[0]);
+        const tbody = document.getElementById('variantPricingTableBody');
+        const rows = tbody.getElementsByTagName('tr');
+        
+        // Validate dữ liệu
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const priceInput = row.querySelector('input[name="variant_prices[]"]');
+            const quantityInput = row.querySelector('input[name="variant_quantities[]"]');
+            
+            if (!priceInput.value || !quantityInput.value) {
+                throw new Error('Vui lòng nhập đầy đủ giá và số lượng cho tất cả biến thể');
+            }
+        }
+
+        // Lưu dữ liệu tạm thời vào form chính
+        const variantFormData = new FormData();
+        const combinations = [];
+        const prices = [];
+        const quantities = [];
+
+        Array.from(rows).forEach((row, index) => {
+            const combinationInput = row.querySelector('input[name="variant_combinations[]"]');
+            const priceInput = row.querySelector('input[name="variant_prices[]"]');
+            const quantityInput = row.querySelector('input[name="variant_quantities[]"]');
+            
+            // Đảm bảo JSON hợp lệ trước khi parse
+            try {
+                const combinationData = JSON.parse(combinationInput.value);
+                combinations.push(combinationData);
+            } catch (e) {
+                console.error('Invalid JSON:', combinationInput.value);
+                throw new Error('Dữ liệu biến thể không hợp lệ');
+            }
+            
+            prices.push(priceInput.value);
+            quantities.push(quantityInput.value);
+            
+            const imageInput = row.querySelector(`input[name="variant_images_${index}"]`);
+            if (imageInput && imageInput.files[0]) {
+                variantFormData.append(`variant_images_${index}`, imageInput.files[0]);
             }
         });
 
-        // Lưu biến thể
-        const response = await fetch('?action=add_variants', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await response.json();
+        // Chuyển đổi mảng combinations thành JSON string an toàn
+        const combinationsJson = JSON.stringify(combinations);
+        
+        // Log để debug
+        console.log('Combinations:', combinations);
+        console.log('Combinations JSON:', combinationsJson);
+        console.log('Prices:', prices);
+        console.log('Quantities:', quantities);
 
-        if (!data.success) {
-            throw new Error(data.message);
+        variantFormData.append('variant_combinations', combinationsJson);
+        variantFormData.append('variant_prices', prices.join(','));
+        variantFormData.append('variant_quantities', quantities.join(','));
+
+        // Lưu variantFormData vào form chính
+        document.getElementById('productForm').variantData = variantFormData;
+        
+        // Ẩn modal biến thể
+        const variantModal = bootstrap.Modal.getInstance(document.getElementById('variantPricingModal'));
+        if (variantModal) {
+            variantModal.hide();
+            setTimeout(() => {
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) backdrop.remove();
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('overflow');
+                document.body.style.removeProperty('padding-right');
+            }, 200);
         }
-
-        // Nếu thành công, commit transaction
-        await fetch('?action=commit_transaction', {
-            method: 'POST'
-        });
-        alert('Lưu sản phẩm và biến thể thành công!');
-        location.reload();
+        
+        alert('Đã lưu thông tin biến thể tạm thời. Nhấn "Lưu sản phẩm" để hoàn tất.');
+        
     } catch (error) {
-        // Nếu có lỗi, rollback transaction
-        await fetch('?action=rollback_transaction', {
-            method: 'POST'
-        });
         console.error('Error:', error);
         alert('Có lỗi xảy ra: ' + error.message);
     }
 }
+
+// Thêm event listener cho modal biến thể
+document.getElementById('variantPricingModal').addEventListener('hidden.bs.modal', function () {
+    // Cleanup sau khi modal đóng
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) backdrop.remove();
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
+});
 
 // Cập nhật hàm saveProduct để trả về Promise
 async function saveProduct() {
@@ -427,43 +559,101 @@ async function saveProduct() {
     const formData = new FormData(form);
     const hasVariants = document.getElementById('hasVariants').checked;
     
-    formData.append('hasVariants', hasVariants);
+    formData.append('hasVariants', hasVariants.toString());
     
     try {
         // Bắt đầu transaction
-        const response = await fetch('?action=start_transaction', {
-            method: 'POST'
+        const startResponse = await fetch('productManagement.php', {
+            method: 'POST',
+            body: new URLSearchParams({
+                'action': 'start_transaction'
+            })
         });
         
+        if (!startResponse.ok) {
+            throw new Error('Không thể bắt đầu transaction');
+        }
+        
         // Lưu thông tin sản phẩm cơ bản
-        const productResponse = await fetch('?action=add_product', {
+        formData.set('action', 'add_product');
+        const response = await fetch('productManagement.php', {
             method: 'POST',
             body: formData
         });
-        const productData = await productResponse.json();
+        
+        if (!response.ok) {
+            throw new Error('Lỗi khi thêm sản phẩm');
+        }
+        
+        const productData = await response.json();
         
         if (!productData.success) {
             throw new Error(productData.message);
         }
 
-        if (hasVariants) {
-            // Nếu có biến thể, hiển thị modal để nhập thông tin biến thể
-            showVariantPricingModal(productData.productId);
-        } else {
-            // Nếu không có biến thể, commit transaction
-            await fetch('?action=commit_transaction', {
-                method: 'POST'
+        // Nếu có biến thể, lưu thông tin biến thể
+        if (hasVariants && form.variantData) {
+            const variantFormData = form.variantData;
+            variantFormData.append('action', 'add_variants');
+            variantFormData.append('productId', productData.productId);
+            
+            const variantResponse = await fetch('productManagement.php', {
+                method: 'POST',
+                body: variantFormData
             });
-            alert('Lưu sản phẩm thành công!');
-            location.reload();
+            
+            if (!variantResponse.ok) {
+                throw new Error('Lỗi khi thêm biến thể');
+            }
+            
+            const variantResult = await variantResponse.json();
+            if (!variantResult.success) {
+                throw new Error(variantResult.message);
+            }
         }
+        
+        // Commit transaction nếu mọi thứ thành công
+        await fetch('productManagement.php', {
+            method: 'POST',
+            body: new URLSearchParams({
+                'action': 'commit_transaction'
+            })
+        });
+
+        alert('Lưu sản phẩm thành công!');
+        location.reload();
+        
     } catch (error) {
-        // Nếu có lỗi, rollback transaction
-        await fetch('?action=rollback_transaction', {
-            method: 'POST'
+        // Rollback transaction nếu có lỗi
+        await fetch('productManagement.php', {
+            method: 'POST',
+            body: new URLSearchParams({
+                'action': 'rollback_transaction'
+            })
         });
         console.error('Error:', error);
         alert('Có lỗi xảy ra: ' + error.message);
+    }
+}
+
+// Thêm hàm xử lý cleanup modal
+function cleanupModal() {
+    // Xóa modal backdrop
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) {
+        backdrop.remove();
+    }
+    
+    // Reset lại body
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+    
+    // Đảm bảo modal product có thể tương tác
+    const productModal = document.getElementById('productModal');
+    if (productModal) {
+        productModal.classList.add('show');
+        productModal.style.display = 'block';
     }
 }
 </script>

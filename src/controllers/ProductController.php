@@ -59,27 +59,40 @@ class ProductController {
     
     public function addProduct($data) {
         try {
-            // Đảm bảo set header JSON trước khi output bất kỳ nội dung nào
             header('Content-Type: application/json; charset=utf-8');
             
             // Validate dữ liệu đầu vào
-            if (empty($data['productName']) || empty($data['category'])) {
-                throw new Exception('Thiếu thông tin sản phẩm bắt buộc');
+            $requiredFields = ['productName', 'category', 'origin'];
+            foreach ($requiredFields as $field) {
+                if (empty($data[$field])) {
+                    throw new Exception("Thiếu thông tin bắt buộc: $field");
+                }
             }
 
-            // Thêm sản phẩm vào database
+            // Chuẩn bị dữ liệu
+            $productName = $data['productName'];
+            $category = $data['category'];
+            $description = $data['description'] ?? '';
+            $origin = $data['origin'] ?? 'Việt Nam';
+            $hasVariants = filter_var($data['hasVariants'], FILTER_VALIDATE_BOOLEAN);
+            $price = $hasVariants ? 0 : (float)($data['price'] ?? 0);
+            $stockQuantity = $hasVariants ? 0 : (int)($data['stockQuantity'] ?? 0);
+            $salePercent = (int)($data['salePercent'] ?? 0);
+            $status = 'ON_SALE';
+
             $sql = "INSERT INTO products (productName, category, description, price, stockQuantity, salePercent, origin, status) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'ON_SALE')";
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             
             $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("sssdiis",
-                $data['productName'],
-                $data['category'],
-                $data['description'],
-                $data['hasVariants'] ? 0 : ($data['price'] ?? 0),
-                $data['hasVariants'] ? 0 : ($data['stockQuantity'] ?? 0),
-                $data['salePercent'] ?? 0,
-                $data['origin'] ?? 'Việt Nam'
+            $stmt->bind_param("sssdiiss",
+                $productName,
+                $category,
+                $description,
+                $price,
+                $stockQuantity,
+                $salePercent,
+                $origin,
+                $status
             );
             
             if (!$stmt->execute()) {
@@ -88,7 +101,7 @@ class ProductController {
             
             $productId = $this->conn->insert_id;
             
-            // Xử lý hình ảnh sản phẩm
+            // Xử lý hình ảnh
             if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
                 $this->handleProductImages($productId, $_FILES['images']);
             }
@@ -98,14 +111,15 @@ class ProductController {
                 'productId' => $productId,
                 'message' => 'Thêm sản phẩm thành công'
             ]);
-            exit; // Thêm exit để đảm bảo không có output khác
+            exit;
             
         } catch (Exception $e) {
+            http_response_code(500);
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
             ]);
-            exit; // Thêm exit để đảm bảo không có output khác
+            exit;
         }
     }
     
@@ -204,51 +218,37 @@ class ProductController {
     
     private function handleProductVariants($productId, $variants) {
         foreach ($variants['combinations'] as $index => $combinationJson) {
-            $combination = json_decode($combinationJson, true);
-            
-            // Thêm biến thể sản phẩm
-            $sql = "INSERT INTO product_variants (productId, price, quantity) 
-                    VALUES (?, ?, ?)";
-            $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("idi", 
-                $productId,
-                $variants['prices'][$index],
-                $variants['quantities'][$index]
-            );
-            $stmt->execute();
-            $variantId = $this->conn->insert_id;
-            
-            // Thêm các giá trị biến thể
-            foreach ($combination as $variantInfo) {
-                // Thêm loại biến thể nếu chưa có
-                $sql = "INSERT INTO variant_types (productId, name) 
-                        VALUES (?, ?) 
-                        ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)";
-                $stmt = $this->conn->prepare($sql);
-                $stmt->bind_param("is", $productId, $variantInfo['type']);
-                $stmt->execute();
-                $typeId = $stmt->insert_id;
-                
-                // Thêm giá trị biến thể
-                $sql = "INSERT INTO variant_values (variantTypeId, value) 
-                        VALUES (?, ?)";
-                $stmt = $this->conn->prepare($sql);
-                $stmt->bind_param("is", $typeId, $variantInfo['value']);
-                $stmt->execute();
-                $valueId = $this->conn->insert_id;
-                
-                // Thêm kết hợp biến thể
-                $sql = "INSERT INTO variant_combinations (productVariantId, variantValueId) 
-                        VALUES (?, ?)";
-                $stmt = $this->conn->prepare($sql);
-                $stmt->bind_param("ii", $variantId, $valueId);
-                $stmt->execute();
+            // Validate giá và số lượng
+            if (!isset($variants['prices'][$index]) || !isset($variants['quantities'][$index])) {
+                throw new Exception('Thiếu thông tin giá hoặc số lượng cho biến thể');
             }
             
+            $price = floatval($variants['prices'][$index]);
+            $quantity = intval($variants['quantities'][$index]);
+            
+            if ($price < 0 || $quantity < 0) {
+                throw new Exception('Giá và số lượng không được âm');
+            }
+            
+            $combination = json_decode($combinationJson, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new Exception('Dữ liệu biến thể không hợp lệ');
+            }
+            
+            // Thêm biến thể vào database
+            $sql = "INSERT INTO product_variants (productId, price, quantity) VALUES (?, ?, ?)";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("idi", $productId, $price, $quantity);
+            
+            if (!$stmt->execute()) {
+                throw new Exception("Lỗi khi thêm biến thể: " . $stmt->error);
+            }
+            
+            $variantId = $this->conn->insert_id;
+            
             // Xử lý ảnh biến thể nếu có
-            if (isset($_FILES["variant_images_$index"]) && 
-                $_FILES["variant_images_$index"]['error'] === UPLOAD_ERR_OK) {
-                $this->handleVariantImage($variantId, $_FILES["variant_images_$index"]);
+            if (isset($_FILES["variant_images_{$index}"]) && !empty($_FILES["variant_images_{$index}"]['name'])) {
+                $this->handleVariantImage($variantId, $_FILES["variant_images_{$index}"]);
             }
         }
     }
@@ -276,26 +276,86 @@ class ProductController {
         }
     }
     
-    public function addProductVariants($productId, $variants) {
+    public function addProductVariants($productId, $variantData) {
         try {
-            $this->conn->begin_transaction();
-            
-            $this->handleProductVariants($productId, $variants);
-            
-            $this->conn->commit();
-            
-            header('Content-Type: application/json');
-            echo json_encode([
-                'success' => true,
-                'message' => 'Thêm biến thể thành công'
-            ]);
-            exit;
-            
+            // Validate dữ liệu đầu vào
+            if (empty($variantData['combinations']) || 
+                empty($variantData['prices']) || 
+                empty($variantData['quantities'])) {
+                throw new Exception('Thiếu thông tin biến thể');
+            }
+
+            // Parse combinations từ JSON string
+            $combinations = json_decode($variantData['combinations'], true);
+            $prices = explode(',', $variantData['prices']);
+            $quantities = explode(',', $variantData['quantities']);
+
+            // Tạo map để theo dõi variant_types và variant_values đã tồn tại
+            $variantTypeMap = [];
+            $variantValueMap = [];
+
+            // Lưu variant_types và variant_values
+            foreach ($combinations as $combo) {
+                foreach ($combo as $variant) {
+                    $typeName = $variant['type'];
+                    
+                    // Thêm variant_type nếu chưa tồn tại
+                    if (!isset($variantTypeMap[$typeName])) {
+                        $sql = "INSERT INTO variant_types (productId, name) VALUES (?, ?)";
+                        $stmt = $this->conn->prepare($sql);
+                        $stmt->bind_param("is", $productId, $typeName);
+                        $stmt->execute();
+                        $variantTypeMap[$typeName] = $stmt->insert_id;
+                    }
+
+                    $typeId = $variantTypeMap[$typeName];
+                    $value = $variant['value'];
+
+                    // Thêm variant_value nếu chưa tồn tại
+                    $valueKey = $typeId . '_' . $value;
+                    if (!isset($variantValueMap[$valueKey])) {
+                        $sql = "INSERT INTO variant_values (variantTypeId, value) VALUES (?, ?)";
+                        $stmt = $this->conn->prepare($sql);
+                        $stmt->bind_param("is", $typeId, $value);
+                        $stmt->execute();
+                        $variantValueMap[$valueKey] = $stmt->insert_id;
+                    }
+                }
+            }
+
+            // Thêm product_variants và variant_combinations
+            foreach ($combinations as $index => $combo) {
+                // Thêm product_variant
+                $sql = "INSERT INTO product_variants (productId, price, quantity) VALUES (?, ?, ?)";
+                $stmt = $this->conn->prepare($sql);
+                $price = $prices[$index];
+                $quantity = $quantities[$index];
+                $stmt->bind_param("idi", $productId, $price, $quantity);
+                $stmt->execute();
+                $variantId = $stmt->insert_id;
+
+                // Thêm variant_combinations
+                foreach ($combo as $variant) {
+                    $typeId = $variantTypeMap[$variant['type']];
+                    $valueKey = $typeId . '_' . $variant['value'];
+                    $valueId = $variantValueMap[$valueKey];
+
+                    $sql = "INSERT INTO variant_combinations (productVariantId, variantValueId) VALUES (?, ?)";
+                    $stmt = $this->conn->prepare($sql);
+                    $stmt->bind_param("ii", $variantId, $valueId);
+                    $stmt->execute();
+                }
+
+                // Xử lý ảnh biến thể nếu có
+                if (isset($_FILES["variant_images_{$index}"]) && 
+                    !empty($_FILES["variant_images_{$index}"]['name'])) {
+                    $this->handleVariantImage($variantId, $_FILES["variant_images_{$index}"]);
+                }
+            }
+
+            return true;
         } catch (Exception $e) {
-            echo json_encode([
-                'success' => false,
-                'message' => $e->getMessage()
-            ]);
+            throw new Exception('Lỗi khi thêm biến thể: ' . $e->getMessage());
         }
     }
     
