@@ -1,8 +1,18 @@
+<?php
+namespace Services;
+
+use Models\Product;
+use Models\ProductVariant;
+use Models\VariantType;
+use Exception;
+
 class ProductService {
     private $db;
-    
-    public function __construct(Database $db) {
-        $this->db = $db;
+    private $transaction_started = false;
+
+    public function __construct() {
+        global $con;
+        $this->db = $con;
     }
     
     public function createProduct($productData) {
