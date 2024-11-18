@@ -57,10 +57,9 @@ class ProductController {
         return $products;
     }
     
-    public function addProduct($data) {
+    public function addProduct(array $data): int 
+    {
         try {
-            header('Content-Type: application/json; charset=utf-8');
-            
             // Validate dữ liệu đầu vào
             $requiredFields = ['productName', 'category', 'origin'];
             foreach ($requiredFields as $field) {
@@ -101,25 +100,15 @@ class ProductController {
             
             $productId = $this->conn->insert_id;
             
-            // Xử lý hình ảnh
+            // Xử lý hình ảnh nếu có
             if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
                 $this->handleProductImages($productId, $_FILES['images']);
             }
             
-            echo json_encode([
-                'success' => true,
-                'productId' => $productId,
-                'message' => 'Thêm sản phẩm thành công'
-            ]);
-            exit;
+            return $productId;
             
         } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => $e->getMessage()
-            ]);
-            exit;
+            throw new Exception("Không thể thêm sản phẩm: " . $e->getMessage());
         }
     }
     
@@ -189,7 +178,7 @@ class ProductController {
     }
     
     private function handleProductImages($productId, $images) {
-        $uploadDir = 'uploads/products/';
+        $uploadDir = '../../../assets/images/uploads/products/';
         if (!file_exists($uploadDir)) {
             mkdir($uploadDir, 0777, true);
         }
@@ -200,11 +189,13 @@ class ProductController {
                 $uploadPath = $uploadDir . $fileName;
                 
                 if (move_uploaded_file($tmp_name, $uploadPath)) {
+                    // Lưu đường dẫn tương đối vào database
+                    $relativePath = 'assets/images/uploads/products/' . $fileName;
                     $sql = "INSERT INTO product_images (productId, imageUrl, isThumbnail) 
                             VALUES (?, ?, ?)";
                     $stmt = $this->conn->prepare($sql);
                     $isThumbnail = ($key === 0) ? 1 : 0;
-                    $stmt->bind_param("isi", $productId, $uploadPath, $isThumbnail);
+                    $stmt->bind_param("isi", $productId, $relativePath, $isThumbnail);
                     
                     if (!$stmt->execute()) {
                         throw new Exception("Lỗi khi lưu thông tin ảnh");
@@ -254,7 +245,7 @@ class ProductController {
     }
     
     private function handleVariantImage($variantId, $image) {
-        $uploadDir = 'uploads/variants/';
+        $uploadDir = '../../../assets/images/uploads/variants/';
         if (!file_exists($uploadDir)) {
             mkdir($uploadDir, 0777, true);
         }
@@ -263,10 +254,12 @@ class ProductController {
         $uploadPath = $uploadDir . $fileName;
         
         if (move_uploaded_file($image['tmp_name'], $uploadPath)) {
+            // Lưu đường dẫn tương đối vào database
+            $relativePath = 'assets/images/uploads/variants/' . $fileName;
             $sql = "INSERT INTO product_images (productId, variantId, imageUrl) 
                     VALUES ((SELECT productId FROM product_variants WHERE id = ?), ?, ?)";
             $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("iis", $variantId, $variantId, $uploadPath);
+            $stmt->bind_param("iis", $variantId, $variantId, $relativePath);
             
             if (!$stmt->execute()) {
                 throw new Exception("Lỗi khi lưu thông tin ảnh biến thể");

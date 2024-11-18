@@ -35,11 +35,15 @@ if (isset($_POST['action'])) {
                 // Thêm sản phẩm và lấy ID
                 $productId = $productController->addProduct($_POST);
                 
-                echo json_encode([
-                    'success' => true,
-                    'productId' => $productId,
-                    'message' => 'Thêm sản phẩm thành công'
-                ]);
+                if ($productId) {
+                    echo json_encode([
+                        'success' => true,
+                        'productId' => $productId,
+                        'message' => 'Thêm sản phẩm thành công'
+                    ]);
+                } else {
+                    throw new Exception('Không thể thêm sản phẩm');
+                }
                 break;
 
             case 'add_variants':
@@ -153,8 +157,17 @@ $products = $productController->getAllProducts();
                 <tr>
                     <td><?= $product['id'] ?></td>
                     <td>
-                        <img src="<?= $product['thumbnail'] ?>" alt="<?= $product['productName'] ?>" 
-                             class="img-thumbnail" style="width: 50px; height: 50px;">
+                        <?php if ($product['thumbnail']): ?>
+                            <img src="<?= '../../../' . $product['thumbnail'] ?>" 
+                                 alt="<?= $product['productName'] ?>" 
+                                 class="img-thumbnail" 
+                                 style="width: 50px; height: 50px;">
+                        <?php else: ?>
+                            <img src="../../../assets/images/no-image.png" 
+                                 alt="No Image" 
+                                 class="img-thumbnail" 
+                                 style="width: 50px; height: 50px;">
+                        <?php endif; ?>
                     </td>
                     <td><?= $product['productName'] ?></td>
                     <td><?= $product['category'] ?></td>
@@ -410,7 +423,7 @@ function completeVariants() {
         return;
     }
 
-    // Kiểm tra các trường b���t buộc
+    // Kiểm tra các trường bt buộc
     let isValid = true;
     variantTypes.forEach(type => {
         const name = type.querySelector('input[name="variant_names[]"]').value;
