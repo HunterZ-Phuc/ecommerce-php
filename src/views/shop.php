@@ -1,6 +1,5 @@
 <?php
-include("C:/xampp/htdocs/nongsan/src/utils/db_connect.php");
-include("C:/xampp/htdocs/nongsan/src/utils/functions.php");
+include("C:/xampp/htdocs/ecommerce-php/src/utils/db_connect.php");
 ?>
 
 <!DOCTYPE html>
@@ -20,7 +19,7 @@ include("C:/xampp/htdocs/nongsan/src/utils/functions.php");
 <div class="container py-5">
     <div class="row">
         <div class="col-lg-3">
-            <?php include("C:/xampp/htdocs/nongsan/src/layout/sidebar.php"); ?>
+            <?php include("C:/xampp/htdocs/ecommerce-php/src/layout/sidebar.php"); ?>
         </div>
 
         <div class="col-lg-9">
@@ -33,13 +32,19 @@ include("C:/xampp/htdocs/nongsan/src/utils/functions.php");
 
             <div class="row">
                 <?php
-                require_once 'C:/xampp/htdocs/nongsan/src/components/product_card.php';
+                require_once 'C:/xampp/htdocs/ecommerce-php/src/components/product_card.php';
 
                 $per_page = 3;
                 $page = isset($_GET['page']) ? $_GET['page'] : 1;
                 $start_from = ($page - 1) * $per_page;
 
-                $get_product = "SELECT * FROM products ORDER BY 1 DESC LIMIT $start_from, $per_page";
+                $category_filter = "";
+                if(isset($_GET['category'])) {
+                    $category = strtoupper($_GET['category']);
+                    $category_filter = "WHERE category = '$category'";
+                }
+
+                $get_product = "SELECT * FROM products $category_filter ORDER BY 1 DESC LIMIT $start_from, $per_page";
                 $run_pro = mysqli_query($con, $get_product);
 
                 while ($row = mysqli_fetch_array($run_pro)) {
