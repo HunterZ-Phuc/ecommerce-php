@@ -30,11 +30,6 @@ header("HTTP/1.1 500 Internal Server Error");
             animation: pulse 2s infinite;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
 
         .error-icon {
             font-size: 80px;
@@ -96,10 +91,6 @@ header("HTTP/1.1 500 Internal Server Error");
                             <a href="/" class="btn btn-outline-secondary btn-lg mb-2">
                                 <i class="bi bi-house-fill me-2"></i>
                                 Về trang chủ
-                            </a>
-                            <a href="mailto:support@example.com" class="btn btn-outline-secondary btn-lg">
-                                <i class="bi bi-envelope-fill me-2"></i>
-                                Liên hệ hỗ trợ
                             </a>
                         </div>
                     </div>

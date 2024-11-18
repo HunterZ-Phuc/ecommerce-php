@@ -4,105 +4,22 @@ ini_set('display_errors', 0);
 
 require_once 'C:/xampp/htdocs/ecommerce-php/src/utils/db_connect.php';
 require_once 'C:/xampp/htdocs/ecommerce-php/src/controllers/ProductController.php';
+require_once 'C:/xampp/htdocs/ecommerce-php/src/services/ProductService.php';
+require_once 'C:/xampp/htdocs/ecommerce-php/src/models/Product.php';
 
-// Thêm dòng use namespace
 use Controllers\ProductController;
 
 // Khởi tạo ProductController
-$productController = new ProductController($con);
+$productController = new ProductController();
 
 // Xử lý các action
 if (isset($_POST['action'])) {
-    try {
-        header('Content-Type: application/json; charset=utf-8');
-        
-        switch ($_POST['action']) {
-            case 'add_product':
-                // Kiểm tra và xử lý dữ liệu sản phẩm
-                if (!isset($_POST['productName']) || !isset($_POST['category'])) {
-                    throw new Exception('Thiếu thông tin sản phẩm cơ bản');
-                }
-
-                // Xử lý hasVariants
-                $hasVariants = isset($_POST['hasVariants']) && $_POST['hasVariants'] === 'true';
-                
-                // Nếu có biến thể, set giá và số lượng về 0
-                if ($hasVariants) {
-                    $_POST['price'] = 0;
-                    $_POST['stockQuantity'] = 0;
-                }
-
-                // Thêm sản phẩm và lấy ID
-                $productId = $productController->addProduct($_POST);
-                
-                if ($productId) {
-                    echo json_encode([
-                        'success' => true,
-                        'productId' => $productId,
-                        'message' => 'Thêm sản phẩm thành công'
-                    ]);
-                } else {
-                    throw new Exception('Không thể thêm sản phẩm');
-                }
-                break;
-
-            case 'add_variants':
-                if (!isset($_POST['productId'])) {
-                    throw new Exception('Thiếu productId');
-                }
-
-                // Kiểm tra dữ liệu biến thể
-                if (!isset($_POST['variant_combinations']) || 
-                    !isset($_POST['variant_prices']) || 
-                    !isset($_POST['variant_quantities'])) {
-                    throw new Exception('Thiếu thông tin biến thể');
-                }
-
-                $result = $productController->addProductVariants(
-                    $_POST['productId'],
-                    [
-                        'combinations' => $_POST['variant_combinations'],
-                        'prices' => $_POST['variant_prices'],
-                        'quantities' => $_POST['variant_quantities']
-                    ]
-                );
-
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Thêm biến thể thành công'
-                ]);
-                break;
-
-            case 'start_transaction':
-                $productController->startTransaction();
-                echo json_encode(['success' => true]);
-                break;
-
-            case 'commit_transaction':
-                $productController->commitTransaction();
-                echo json_encode(['success' => true]);
-                break;
-
-            case 'rollback_transaction':
-                $productController->rollbackTransaction();
-                echo json_encode(['success' => true]);
-                break;
-            default:
-                throw new Exception('Action không hợp lệ');
-        }
-        exit;
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'message' => $e->getMessage()
-        ]);
-        exit;
-    }
+    $productController->handleAction();
+    exit;
 }
 
 // Lấy danh sách sản phẩm
-$products = $productController->getAllProducts();
+$products = $productController->index();
 ?>
 
 <!DOCTYPE html>
@@ -111,7 +28,7 @@ $products = $productController->getAllProducts();
     <title>Quản Lý Sản Phẩm</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="../../../assets/bootstrap-5.3.3-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         .variant-type .card {
@@ -158,12 +75,12 @@ $products = $productController->getAllProducts();
                     <td><?= $product['id'] ?></td>
                     <td>
                         <?php if ($product['thumbnail']): ?>
-                            <img src="<?= '../../../' . $product['thumbnail'] ?>" 
+                            <img src="<?= '/ecommerce-php/src/' . $product['thumbnail'] ?>" 
                                  alt="<?= $product['productName'] ?>" 
                                  class="img-thumbnail" 
                                  style="width: 50px; height: 50px;">
                         <?php else: ?>
-                            <img src="../../../assets/images/no-image.png" 
+                            <img src="/ecommerce-php/assets/images/no-image.png" 
                                  alt="No Image" 
                                  class="img-thumbnail" 
                                  style="width: 50px; height: 50px;">
@@ -326,7 +243,7 @@ $products = $productController->getAllProducts();
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="../../../assets/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 let variantTypeCount = 0;
 
@@ -566,7 +483,7 @@ document.getElementById('variantPricingModal').addEventListener('hidden.bs.modal
     document.body.style.removeProperty('padding-right');
 });
 
-// Cập nhật hàm saveProduct để trả về Promise
+// Cập nhật hàm saveProduct đ trả về Promise
 async function saveProduct() {
     const form = document.getElementById('productForm');
     const formData = new FormData(form);
@@ -576,33 +493,10 @@ async function saveProduct() {
     
     try {
         // Bắt đầu transaction
-        const startResponse = await fetch('productManagement.php', {
-            method: 'POST',
-            body: new URLSearchParams({
-                'action': 'start_transaction'
-            })
-        });
-        
-        if (!startResponse.ok) {
-            throw new Error('Không thể bắt đầu transaction');
-        }
+        await callApi('start_transaction');
         
         // Lưu thông tin sản phẩm cơ bản
-        formData.set('action', 'add_product');
-        const response = await fetch('productManagement.php', {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (!response.ok) {
-            throw new Error('Lỗi khi thêm sản phẩm');
-        }
-        
-        const productData = await response.json();
-        
-        if (!productData.success) {
-            throw new Error(productData.message);
-        }
+        const productData = await callApi('add_product', formData);
 
         // Nếu có biến thể, lưu thông tin biến thể
         if (hasVariants && form.variantData) {
@@ -610,43 +504,44 @@ async function saveProduct() {
             variantFormData.append('action', 'add_variants');
             variantFormData.append('productId', productData.productId);
             
-            const variantResponse = await fetch('productManagement.php', {
-                method: 'POST',
-                body: variantFormData
-            });
-            
-            if (!variantResponse.ok) {
-                throw new Error('Lỗi khi thêm biến thể');
-            }
-            
-            const variantResult = await variantResponse.json();
-            if (!variantResult.success) {
-                throw new Error(variantResult.message);
-            }
+            await callApi('add_variants', variantFormData);
         }
         
-        // Commit transaction nếu mọi thứ thành công
-        await fetch('productManagement.php', {
-            method: 'POST',
-            body: new URLSearchParams({
-                'action': 'commit_transaction'
-            })
-        });
+        // Commit transaction
+        await callApi('commit_transaction');
 
         alert('Lưu sản phẩm thành công!');
         location.reload();
         
     } catch (error) {
         // Rollback transaction nếu có lỗi
-        await fetch('productManagement.php', {
-            method: 'POST',
-            body: new URLSearchParams({
-                'action': 'rollback_transaction'
-            })
-        });
+        await callApi('rollback_transaction');
         console.error('Error:', error);
         alert('Có lỗi xảy ra: ' + error.message);
     }
+}
+
+// Hàm helper để gọi API
+async function callApi(action, formData = null) {
+    const url = 'productManagement.php';
+    const options = {
+        method: 'POST',
+        body: formData || new URLSearchParams({ action })
+    };
+
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+        throw new Error(data.message);
+    }
+    
+    return data;
 }
 
 // Thêm hàm xử lý cleanup modal

@@ -193,6 +193,8 @@ $products = $productController->getAllProducts();
     </div>
 </div>
 
+<?php include 'addProduct.php'; ?>
+
 <!-- Modal Thêm/Sửa Sản Phẩm -->
 <div class="modal fade" id="productModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
