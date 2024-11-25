@@ -31,9 +31,9 @@
                 <ul class="list-unstyled">
                     <li class="mb-2"><strong>Nông Sản Sạch Việt Nam</strong></li>
                     <li class="mb-2">Số 123 Đường ABC</li>
-                    <li class="mb-2">Quận Hai Bà Trưng, Hà Nội</li>
+                    <li class="mb-2">ĐH Tây Bắc, Sơn La</li>
                     <li class="mb-2">Email: contact@nongsansach.vn</li>
-                    <li class="mb-2">Hotline: 1900 1234</li>
+                    <li class="mb-2">Hotline: 0123.456.789</li>
                 </ul>
             </div>
 

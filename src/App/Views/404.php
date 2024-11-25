@@ -57,7 +57,7 @@
                         Xin lỗi, trang bạn yêu cầu không tồn tại hoặc đã bị di chuyển.
                     </div>
                     <div class="error-actions">
-                        <a href="/php-mvc/" class="btn btn-primary btn-lg">
+                        <a href="/ecommerce-php/" class="btn btn-primary btn-lg">
                             <i class="bi bi-house-door-fill me-2"></i>
                             Quay về trang chủ
                         </a>

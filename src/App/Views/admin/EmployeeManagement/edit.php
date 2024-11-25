@@ -7,7 +7,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="/php-mvc/admin/employee-management/edit/<?= $employee['id'] ?>" method="POST">
+                    <form action="/ecommerce-php/admin/employee-management/edit/<?= $employee['id'] ?>" method="POST">
                         <input type="hidden" name="id" value="<?= $employee['id'] ?>">
 
                         <div class="mb-3">

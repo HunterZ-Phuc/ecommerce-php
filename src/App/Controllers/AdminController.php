@@ -36,10 +36,10 @@ class AdminController extends BaseController
             } catch (\Exception $e) {
                 $_SESSION['error'] = $e->getMessage();
             }
-            header('Location: /php-mvc/admin/admin-management');
+            header('Location: /ecommerce-php/admin/admin-management');
             exit;
         }
-        header('Location: /php-mvc/admin/admin-management');
+        header('Location: /ecommerce-php/admin/admin-management');
         exit;
     }
     
@@ -62,10 +62,10 @@ class AdminController extends BaseController
             } catch (\Exception $e) {
                 $_SESSION['error'] = $e->getMessage();
             }
-            header('Location: /php-mvc/admin/admin-management');
+            header('Location: /ecommerce-php/admin/admin-management');
             exit;
         }
-        header('Location: /php-mvc/admin/admin-management');
+        header('Location: /ecommerce-php/admin/admin-management');
         exit;
     }
     
@@ -77,7 +77,7 @@ class AdminController extends BaseController
             } catch (\Exception $e) {
                 $_SESSION['error'] = $e->getMessage();  
             }
-            header('Location: /php-mvc/admin/admin-management');
+            header('Location: /ecommerce-php/admin/admin-management');
             exit;
         }
     }

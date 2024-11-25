@@ -6,7 +6,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="editForm" method="POST" action="/php-mvc/employee/product-management/edit/<?= $product['id'] ?>">
+                <form id="editForm" method="POST" action="/ecommerce-php/employee/product-management/edit/<?= $product['id'] ?>">
                     <div class="mb-3">
                         <label class="form-label">Tên sản phẩm</label>
                         <input type="text" name="productName" class="form-control" value="<?= $product['productName'] ?>" required>

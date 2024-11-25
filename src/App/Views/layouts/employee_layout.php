@@ -37,27 +37,27 @@
                 </div>
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/php-mvc/employee">
+                        <a class="nav-link text-white" href="/ecommerce-php/employee">
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/php-mvc/employee/order-management">
+                        <a class="nav-link text-white" href="/ecommerce-php/employee/order-management">
                             <i class="bi bi-people"></i> Quản lý đơn hàng
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/php-mvc/employee/product-management">
+                        <a class="nav-link text-white" href="/ecommerce-php/employee/product-management">
                             <i class="bi bi-people"></i> Quản lý sản phẩm
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/php-mvc/employee/product-management">
+                        <a class="nav-link text-white" href="/ecommerce-php/employee/product-management">
                             <i class="bi bi-people"></i> Quản lý sản phẩm
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/php-mvc/logout">
+                        <a class="nav-link text-white" href="/ecommerce-php/logout">
                             <i class="bi bi-box-arrow-right"></i> Đăng xuất
                         </a>
                     </li>

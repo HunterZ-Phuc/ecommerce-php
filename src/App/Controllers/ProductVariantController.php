@@ -23,7 +23,7 @@ class ProductVariantController extends BaseController
                 'price' => $_POST['price']
             ];
             $this->variantModel->create($data);
-            header('Location: /php-mvc/employee/product-management');
+            header('Location: /ecommerce-php/employee/product-management');
             exit;
         }
     }
@@ -39,7 +39,7 @@ class ProductVariantController extends BaseController
                 'price' => $_POST['price']
             ];
             $this->variantModel->update($id, $data);
-            header('Location: /php-mvc/employee/product-management');
+            header('Location: /ecommerce-php/employee/product-management');
             exit;
         }
 
@@ -52,7 +52,7 @@ class ProductVariantController extends BaseController
     public function delete($id)
     {
         $this->variantModel->delete($id);
-        header('Location: /php-mvc/employee/product-management');
+        header('Location: /ecommerce-php/employee/product-management');
         exit;
     }
 } 

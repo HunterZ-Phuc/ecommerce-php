@@ -268,7 +268,7 @@ class ProductController extends BaseController
                 'status' => $_POST['status']
             ];
             $this->productModel->update($id, $data);
-            header('Location: /php-mvc/employee/product-management');
+            header('Location: /ecommerce-php/employee/product-management');
             exit;
         }
 
@@ -281,7 +281,7 @@ class ProductController extends BaseController
     public function delete($id)
     {
         $this->productModel->delete($id);
-        header('Location: /php-mvc/employee/product-management');
+        header('Location: /ecommerce-php/employee/product-management');
         exit;
     }
 }

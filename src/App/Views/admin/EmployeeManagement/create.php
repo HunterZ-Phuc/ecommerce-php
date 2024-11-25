@@ -6,7 +6,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form action="/php-mvc/admin/employee-management/create" method="POST"> <!-- Định dạng URL và phương thức POST -->
+                <form action="/ecommerce-php/admin/employee-management/create" method="POST"> <!-- Định dạng URL và phương thức POST -->
                     <div class="mb-3">
                         <label class="form-label">Username</label>
                         <input type="text" name="username" class="form-control" required>

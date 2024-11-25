@@ -7,7 +7,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="/php-mvc/admin/admin-management/edit/<?= $admin['id'] ?>" method="POST">
+                    <form action="/ecommerce-php/admin/admin-management/edit/<?= $admin['id'] ?>" method="POST">
                         <input type="hidden" name="id" value="<?= $admin['id'] ?>">
                         
                         <div class="mb-3">

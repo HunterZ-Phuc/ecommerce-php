@@ -15,14 +15,14 @@
 <nav class="navbar navbar-expand-lg" style="background-color: #f8f9fa;">
         <div class="container">
             <!-- Logo -->
-            <a class="navbar-brand" href="/php-mvc">
-                <img src="/php-mvc/public/images/logo2.png" alt="Logo" height="40" class="d-none d-lg-inline">
-                <img src="/php-mvc/public/images/logo1.png" alt="Logo" height="35" class="d-lg-none">
+            <a class="navbar-brand" href="/ecommerce-php">
+                <img src="/ecommerce-php/public/images/logo2.png" alt="Logo" height="40" class="d-none d-lg-inline">
+                <img src="/ecommerce-php/public/images/logo1.png" alt="Logo" height="35" class="d-lg-none">
             </a>
 
             <!-- Search Bar -->
             <div class="d-flex flex-grow-1 mx-lg-4">
-                <form class="d-flex w-100" method="get" action="/php-mvc/search">
+                <form class="d-flex w-100" method="get" action="/ecommerce-php/search">
                     <input class="form-control me-2" type="search" name="query" placeholder="Tìm kiếm sản phẩm..." required>
                     <button class="btn btn-success" type="submit">
                         <i class="fa fa-search"></i>
@@ -32,12 +32,12 @@
 
             <!-- Cart & Account -->
             <div class="d-flex align-items-center">
-                <a href="<?= isset($_SESSION['customer_email']) ? '/php-mvc/cart' : '/php-mvc/login' ?>" 
+                <a href="<?= isset($_SESSION['customer_email']) ? '/ecommerce-php/cart' : '/ecommerce-php/login' ?>" 
                    class="btn btn-outline-success me-2">
                     <i class="fa fa-shopping-cart"></i>
                     <span class="d-none d-md-inline ms-2">Giỏ hàng</span>
                 </a>
-                <a href="<?= isset($_SESSION['customer_email']) ? '/php-mvc/customer/account' : '/php-mvc/login' ?>" 
+                <a href="<?= isset($_SESSION['customer_email']) ? '/ecommerce-php/customer/account' : '/ecommerce-php/login' ?>" 
                    class="btn btn-outline-success">
                     <i class="fa fa-user"></i>
                     <span class="d-none d-md-inline ms-2">Tài khoản</span>
@@ -57,22 +57,22 @@
             <div class="collapse navbar-collapse" id="mainNav">
                 <ul class="navbar-nav mx-auto">
                     <li class="nav-item">
-                        <a class="nav-link <?= $currentPage === 'home' ? 'active' : '' ?>" href="/php-mvc">Trang chủ</a>
+                        <a class="nav-link <?= $currentPage === 'home' ? 'active' : '' ?>" href="/ecommerce-php">Trang chủ</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= $currentPage === 'shop' ? 'active' : '' ?>" href="/php-mvc/shop">Cửa hàng</a>
+                        <a class="nav-link <?= $currentPage === 'shop' ? 'active' : '' ?>" href="/ecommerce-php/shop">Cửa hàng</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= $currentPage === 'about' ? 'active' : '' ?>" href="/php-mvc/about">Về chúng tôi</a>
+                        <a class="nav-link <?= $currentPage === 'about' ? 'active' : '' ?>" href="/ecommerce-php/about">Về chúng tôi</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= $currentPage === 'service' ? 'active' : '' ?>" href="/php-mvc/service">Dịch vụ</a>
+                        <a class="nav-link <?= $currentPage === 'service' ? 'active' : '' ?>" href="/ecommerce-php/service">Dịch vụ</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= $currentPage === 'contact' ? 'active' : '' ?>" href="/php-mvc/contact">Liên hệ</a>
+                        <a class="nav-link <?= $currentPage === 'contact' ? 'active' : '' ?>" href="/ecommerce-php/contact">Liên hệ</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= $currentPage === 'blog' ? 'active' : '' ?>" href="/php-mvc/blog">Blog</a>
+                        <a class="nav-link <?= $currentPage === 'blog' ? 'active' : '' ?>" href="/ecommerce-php/blog">Blog</a>
                     </li>
                 </ul>
             </div>

@@ -14,7 +14,7 @@ class App
     {
         try {
             // Loại bỏ tên thư mục gốc khỏi path
-            $path = preg_replace('/^\/php-mvc/', '', $path);
+            $path = preg_replace('/^\/ecommerce-php/', '', $path);
             
             // Tìm route phù hợp
             $params = $this->router->match($path);

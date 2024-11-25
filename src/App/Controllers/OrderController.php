@@ -53,7 +53,7 @@ class OrderController extends BaseController
                 $this->paymentModel->updateStatus($payment['id'], 'COMPLETED');
             }
 
-            header('Location: /php-mvc/employee/order-management');
+            header('Location: /ecommerce-php/employee/order-management');
             exit;
         }
     }

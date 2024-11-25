@@ -7,7 +7,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="/php-mvc/admin/employee-management/delete/<?= $employee['id'] ?>" method="POST">
+                    <form action="/ecommerce-php/admin/employee-management/delete/<?= $employee['id'] ?>" method="POST">
                         <input type="hidden" name="id" value="<?= $employee['id'] ?>">
                         <p>Bạn có chắc muốn xóa nhân viên này?</p>
                         <p><strong>Họ tên:</strong> <?= $employee['fullName'] ?></p>

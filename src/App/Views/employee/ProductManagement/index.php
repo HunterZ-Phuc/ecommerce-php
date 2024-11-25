@@ -44,7 +44,7 @@
                         <img src="<?= $product['image_url'] ?>" alt="<?= $product['productName'] ?>"
                             class="img-thumbnail" style="width: 50px; height: 50px;">
                     <?php else: ?>
-                        <img src="/php-mvc/public/assets/images/no-image.png" alt="No Image" 
+                        <img src="/ecommerce-php/public/assets/images/no-image.png" alt="No Image" 
                             class="img-thumbnail" style="width: 50px; height: 50px;">
                     <?php endif; ?>
                 </td>

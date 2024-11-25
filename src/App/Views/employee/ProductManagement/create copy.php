@@ -6,7 +6,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form action="/php-mvc/employee/product-management/create" method="POST" enctype="multipart/form-data" id="createProductForm">
+                <form action="/ecommerce-php/employee/product-management/create" method="POST" enctype="multipart/form-data" id="createProductForm">
                     <!-- Thông tin cơ bản -->
                     <div class="mb-3">
                         <label class="form-label">Tên sản phẩm</label>
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // this.reset();
             
             // KHÔNG chuyển hướng trang
-            // window.location.href = '/php-mvc/employee/product-management';
+            // window.location.href = '/ecommerce-php/employee/product-management';
         } catch (error) {
             console.error('=== Lỗi khi gửi dữ liệu ===');
             console.error(error);

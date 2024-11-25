@@ -44,11 +44,11 @@ class EmployeeController extends BaseController
             } catch (\Exception $e) { // Xử lý ngoại lệ
                 $_SESSION['error'] = $e->getMessage();
             }
-            header('Location: /php-mvc/admin/employee-management'); //Reload lại trang cho đúng với dữ liệu mới
+            header('Location: /ecommerce-php/admin/employee-management'); //Reload lại trang cho đúng với dữ liệu mới
             exit;
         }
         // Khi không phải POST request, chuyển hướng đến trang quản lý nhân viên
-        header('Location: /php-mvc/admin/employee-management'); // Chuyển hướng đến trang quản lý nhân viên
+        header('Location: /ecommerce-php/admin/employee-management'); // Chuyển hướng đến trang quản lý nhân viên
         exit; // Kết thúc chương trình
     }
 
@@ -75,10 +75,10 @@ class EmployeeController extends BaseController
             } catch (\Exception $e) {
                 $_SESSION['error'] = $e->getMessage();
             }
-            header('Location: /php-mvc/admin/employee-management');
+            header('Location: /ecommerce-php/admin/employee-management');
             exit;
         }
-        header('Location: /php-mvc/admin/employee-management');
+        header('Location: /ecommerce-php/admin/employee-management');
         exit;
     }
 
@@ -91,10 +91,10 @@ class EmployeeController extends BaseController
             } catch (\Exception $e) {
                 $_SESSION['error'] = $e->getMessage();
             }
-            header('Location: /php-mvc/admin/employee-management');
+            header('Location: /ecommerce-php/admin/employee-management');
             exit;
         }
-        header('Location: /php-mvc/admin/employee-management');
+        header('Location: /ecommerce-php/admin/employee-management');
         exit;
     }
 }
