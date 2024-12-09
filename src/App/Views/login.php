@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
 <body class="bg-light">
     <div class="container">
         <div class="row justify-content-center mt-5">
@@ -23,27 +25,16 @@
                         <form action="/ecommerce-php/login" method="POST">
                             <div class="mb-3">
                                 <label for="username" class="form-label">Tên đăng nhập</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="username" 
-                                       name="username" 
-                                       required>
+                                <input type="text" class="form-control" id="username" name="username" required>
                             </div>
 
                             <div class="mb-3">
                                 <label for="password" class="form-label">Mật khẩu</label>
-                                <input type="password" 
-                                       class="form-control" 
-                                       id="password" 
-                                       name="password" 
-                                       required>
+                                <input type="password" class="form-control" id="password" name="password" required>
                             </div>
 
                             <div class="mb-3 form-check">
-                                <input type="checkbox" 
-                                       class="form-check-input" 
-                                       id="remember" 
-                                       name="remember">
+                                <input type="checkbox" class="form-check-input" id="remember" name="remember">
                                 <label class="form-check-label" for="remember">
                                     Ghi nhớ đăng nhập
                                 </label>
@@ -65,4 +56,5 @@
         </div>
     </div>
 </body>
+
 </html>

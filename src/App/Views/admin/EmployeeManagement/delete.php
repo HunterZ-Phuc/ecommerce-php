@@ -12,7 +12,7 @@
                         <p>Bạn có chắc muốn xóa nhân viên này?</p>
                         <p><strong>Họ tên:</strong> <?= $employee['fullName'] ?></p>
                         <p><strong>Email:</strong> <?= $employee['email'] ?></p>
-                        
+
                         <div class="modal-footer px-0 pb-0">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                             <button type="submit" class="btn btn-danger">Xóa</button>

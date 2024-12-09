@@ -31,4 +31,4 @@ class VariantCombinationController extends BaseController
         $this->combinationModel->delete($id);
         return $this->json(['success' => true]);
     }
-} 
+}

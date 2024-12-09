@@ -46,34 +46,34 @@ class HomeController extends BaseController
             ];
 
             // Xử lý phân trang
-            $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+            $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
             $limit = 12;
             $offset = ($page - 1) * $limit;
-            
+
             // Mặc định hiển thị tất cả sản phẩm đang bán
-            $conditions = ["p.status = 'ON_SALE'"]; 
+            $conditions = ["p.status = 'ON_SALE'"];
             $params = [];
-            
+
             // Log điều kiện truy vấn
             echo '<script>console.log("Query conditions:", ' . json_encode($conditions) . ');</script>';
-            
+
             // Đếm tổng số sản phẩm và tính số trang
             $whereClause = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
             $totalProducts = $this->productModel->count($whereClause, $params);
-            
+
             // Log tổng số sản phẩm
             echo '<script>console.log("Total products:", ' . $totalProducts . ');</script>';
-            
+
             // Tính tổng số trang
             $totalPages = max(1, ceil($totalProducts / $limit));
             $page = min($page, $totalPages); // Đảm bảo page không vượt quá totalPages
-            
+
             // Lấy danh sách sản phẩm với phân trang
             $products = $this->productModel->findWithFilters($conditions, $params, $limit, $offset);
-            
+
             // Log chi tiết sản phẩm
             echo '<script>console.log("Products data:", ' . json_encode($products) . ');</script>';
-            
+
             // Lấy thông tin biến thể và ảnh cho mỗi sản phẩm
             foreach ($products as &$product) {
                 $product['variants'] = $this->variantModel->findAllByProductId($product['id']);
@@ -81,7 +81,7 @@ class HomeController extends BaseController
                     $product['mainImage'] = '/assets/images/no-image.png';
                 }
             }
-            
+
             // Log dữ liệu sau khi thêm variants
             echo '<script>console.log("Products with variants:", ' . json_encode($products) . ');</script>';
 
@@ -100,7 +100,7 @@ class HomeController extends BaseController
             // Log lỗi chi tiết
             echo '<script>console.error("Error:", ' . json_encode($e->getMessage()) . ');</script>';
             error_log("Home page error: " . $e->getMessage());
-            
+
             // Render view với thông báo lỗi
             $this->view('home/index', [
                 'title' => 'Trang chủ',
@@ -114,7 +114,7 @@ class HomeController extends BaseController
         try {
             // Lấy thông tin sản phẩm
             $product = $this->productModel->findById($id);
-            
+
             if (!$product) {
                 throw new \Exception("Không tìm thấy sản phẩm");
             }
@@ -124,16 +124,16 @@ class HomeController extends BaseController
 
             // Lấy các biến thể của sản phẩm
             $product['variants'] = $this->variantModel->findByProductId($id);
-            
+
             // Lấy thông tin chi tiết cho mỗi biến thể
             foreach ($product['variants'] as &$variant) {
                 // Sử dụng model để lấy thông tin tên biến thể
                 $variant['combinations'] = $this->variantCombinationModel->findByVariantId($variant['id']);
             }
-            
+
             // Lấy tất cả ảnh của sản phẩm
             $product['images'] = $this->imageModel->findByProductId($id);
-            
+
             // Tìm ảnh chính (mainImage) - ảnh có variantId = null và isThumbnail = true
             $mainImage = null;
             if (!empty($product['images'])) {

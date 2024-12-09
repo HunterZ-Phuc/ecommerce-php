@@ -34,34 +34,30 @@
     </thead>
     <tbody>
         <?php foreach ($employees as $employee): ?>
-        <tr>
-            <td><?= $employee['id'] ?></td>
-            <td><?= $employee['fullName'] ?></td>
-            <td><?= $employee['username'] ?></td>
-            <td><?= $employee['email'] ?></td>
-            <td><?= $employee['phone'] ?></td>
-            <td><?= $employee['address'] ?></td>
-            <td><?= number_format($employee['salary']) ?> VNĐ</td>
-            <td>
-                <button type="button" 
-                        class="btn btn-sm btn-warning" 
-                        data-bs-toggle="modal" 
+            <tr>
+                <td><?= $employee['id'] ?></td>
+                <td><?= $employee['fullName'] ?></td>
+                <td><?= $employee['username'] ?></td>
+                <td><?= $employee['email'] ?></td>
+                <td><?= $employee['phone'] ?></td>
+                <td><?= $employee['address'] ?></td>
+                <td><?= number_format($employee['salary']) ?> VNĐ</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
                         data-bs-target="#editModal<?= $employee['id'] ?>">
-                    Sửa
-                </button>
-                <button type="button" 
-                        class="btn btn-sm btn-danger" 
-                        data-bs-toggle="modal" 
+                        Sửa
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal"
                         data-bs-target="#deleteModal<?= $employee['id'] ?>">
-                    Xóa
-                </button>
-            </td>
-        </tr>
+                        Xóa
+                    </button>
+                </td>
+            </tr>
         <?php endforeach; ?>
     </tbody>
 </table>
 
-<?php 
+<?php
 require_once ROOT_PATH . '/src/App/Views/admin/EmployeeManagement/create.php';
 require_once ROOT_PATH . '/src/App/Views/admin/EmployeeManagement/edit.php';
 require_once ROOT_PATH . '/src/App/Views/admin/EmployeeManagement/delete.php';

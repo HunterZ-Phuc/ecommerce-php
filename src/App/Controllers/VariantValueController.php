@@ -41,4 +41,4 @@ class VariantValueController extends BaseController
         $this->valueModel->delete($id);
         return $this->json(['success' => true]);
     }
-} 
+}

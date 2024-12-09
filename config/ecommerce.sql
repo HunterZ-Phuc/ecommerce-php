@@ -54,6 +54,7 @@ CREATE TABLE users (
   `phone` varchar(20) NOT NULL,
   `email` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
+  `eRole` enum('ADMIN','EMPLOYEE','USER') NOT NULL DEFAULT 'USER',
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `updatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
@@ -67,6 +68,7 @@ CREATE TABLE admins (
   `username` varchar(50) NOT NULL,
   `email` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
+  `eRole` enum('ADMIN','EMPLOYEE','USER') NOT NULL DEFAULT 'ADMIN',
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `updatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
@@ -86,6 +88,7 @@ CREATE TABLE employees (
   `address` text NOT NULL,
   `salary` decimal(10,0) NOT NULL,
   `password` varchar(255) NOT NULL,
+  `eRole` enum('ADMIN','EMPLOYEE','USER') NOT NULL DEFAULT 'EMPLOYEE',
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `updatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
@@ -243,7 +246,6 @@ CREATE TABLE items (
   `variantId` int(11) NOT NULL,
   `quantity` int(11) NOT NULL,
   `orderId` int(11) NOT NULL,
-  `orderId` int(11) NOT NULL,
   `price` decimal(15,2) NOT NULL,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`productId`) REFERENCES products(`id`) ON DELETE CASCADE,
@@ -260,7 +262,7 @@ ADD INDEX idx_user_search (fullName, phone, email);
 -- Index cho products  
 ALTER TABLE products
 ADD INDEX idx_product_search (productName, category, status),
-ADD INDEX idx_product_filters (price, stockQuantity, salePercent);
+ADD INDEX idx_product_filters (salePercent, sold);
 
 -- Index cho orders
 ALTER TABLE orders 
@@ -454,3 +456,8 @@ BEGIN
     END IF;
 END //
 DELIMITER ;
+
+-- Tạo tài khoản mặc định cho Admin
+INSERT INTO admins (username, email, password, eRole) VALUES
+('admin', 'admin@gmail.com', '$2a$10$mLK.rrdlvx9DCFb6Eck1t.TlltnGulepXnov3bBp5T2TloO1MYj52', 'ADMIN');
+-- Password: 123456

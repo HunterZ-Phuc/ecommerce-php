@@ -30,4 +30,4 @@ class Payment extends BaseModel
         ];
         return parent::update($id, $data);
     }
-} 
+}

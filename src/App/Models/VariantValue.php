@@ -15,7 +15,7 @@ class VariantValue extends BaseModel
                 'type_id' => $typeId,
                 'value' => $value
             ]);
-            
+
             return $this->db->lastInsertId();
         } catch (\PDOException $e) {
             throw new \Exception('Lỗi khi tạo variant value: ' . $e->getMessage());
@@ -33,7 +33,8 @@ class VariantValue extends BaseModel
         return $stmt->fetchColumn();
     }
 
-    public function findByTypeAndValue($typeId, $value) {
+    public function findByTypeAndValue($typeId, $value)
+    {
         $sql = "SELECT id FROM variant_values 
                 WHERE variantTypeId = ? AND value = ?";
         $stmt = $this->db->prepare($sql);

@@ -1,20 +1,23 @@
 <?php
 namespace App\Controllers;
 
-abstract class BaseController {
-    public function __construct() {
+abstract class BaseController
+{
+    public function __construct()
+    {
     }
-    
-    public function view($view, $data = [], $layout = null) {
+
+    public function view($view, $data = [], $layout = null)
+    {
         extract($data);
-        
+
         // Bắt đầu output buffering
         ob_start();
-        
+
         // Load view content
         require_once ROOT_PATH . "/src/App/Views/{$view}.php";
         $content = ob_get_clean();
-        
+
         if ($layout) {
             require_once ROOT_PATH . "/src/App/Views/layouts/{$layout}.php";
         } else {
@@ -30,20 +33,23 @@ abstract class BaseController {
         }
     }
 
-    protected function json($data) {
+    protected function json($data)
+    {
         header('Content-Type: application/json');
         echo json_encode($data);
         exit;
     }
 
-    protected function error($message, $code = 400) {
+    protected function error($message, $code = 400)
+    {
         $this->json([
             'success' => false,
             'message' => $message
         ]);
     }
 
-    protected function jsonResponse($data, $statusCode = 200) {
+    protected function jsonResponse($data, $statusCode = 200)
+    {
         ob_clean();
         header('Content-Type: application/json');
         http_response_code($statusCode);
@@ -51,7 +57,8 @@ abstract class BaseController {
         exit;
     }
 
-    protected function redirect($path) {
+    protected function redirect($path)
+    {
         header("Location: /ecommerce-php/" . $path);
         exit;
     }

@@ -48,13 +48,13 @@ class ProductController extends BaseController
         foreach ($products as &$product) {
             // Lấy tất cả ảnh của sản phẩm, bao gồm cả ảnh chính
             $product['images'] = $this->productImageModel->findByProductId($product['id']);
-            
+
             // Lấy các biến thể
             $product['variants'] = $this->variantModel->findByProductId($product['id']);
-            
+
             foreach ($product['variants'] as &$variant) {
                 $variant['images'] = $this->productImageModel->getImagesByVariantId($variant['id']);
-                
+
                 $stmt = $this->db->prepare("
                     SELECT 
                         vt.id as typeId,
@@ -132,31 +132,31 @@ class ProductController extends BaseController
                         'quantity' => $combination['quantity']
                     ]);
 
-                        // Xử lý ảnh cho biến thể
-                        if (
-                            isset($_FILES['variant_combinations']['name'][$index]['image'])
-                            && !empty($_FILES['variant_combinations']['name'][$index]['image'])
-                        ) {
+                    // Xử lý ảnh cho biến thể
+                    if (
+                        isset($_FILES['variant_combinations']['name'][$index]['image'])
+                        && !empty($_FILES['variant_combinations']['name'][$index]['image'])
+                    ) {
 
-                            $variantImage = [
-                                'name' => $_FILES['variant_combinations']['name'][$index]['image'],
-                                'type' => $_FILES['variant_combinations']['type'][$index]['image'],
-                                'tmp_name' => $_FILES['variant_combinations']['tmp_name'][$index]['image'],
-                                'error' => $_FILES['variant_combinations']['error'][$index]['image'],
-                                'size' => $_FILES['variant_combinations']['size'][$index]['image']
-                            ];
+                        $variantImage = [
+                            'name' => $_FILES['variant_combinations']['name'][$index]['image'],
+                            'type' => $_FILES['variant_combinations']['type'][$index]['image'],
+                            'tmp_name' => $_FILES['variant_combinations']['tmp_name'][$index]['image'],
+                            'error' => $_FILES['variant_combinations']['error'][$index]['image'],
+                            'size' => $_FILES['variant_combinations']['size'][$index]['image']
+                        ];
 
-                            $imageUrl = $this->uploadSingleImage($variantImage);
+                        $imageUrl = $this->uploadSingleImage($variantImage);
 
-                    if ($imageUrl) {
-                        $this->productImageModel->create([
-                            'productId' => $productId,
-                            'variantId' => $variantId,
-                            'imageUrl' => $imageUrl,
-                            'isThumbnail' => false
-                        ]);
+                        if ($imageUrl) {
+                            $this->productImageModel->create([
+                                'productId' => $productId,
+                                'variantId' => $variantId,
+                                'imageUrl' => $imageUrl,
+                                'isThumbnail' => false
+                            ]);
+                        }
                     }
-                }
 
                     // Xử lý các giá trị biến thể
                     foreach ($combination as $type => $value) {
@@ -166,18 +166,18 @@ class ProductController extends BaseController
                                 'name' => $type
                             ]);
 
-                        $variantValueId = $this->variantValueModel->createVariantValue(
-                            $variantTypeId,
-                            $value
-                        );
+                            $variantValueId = $this->variantValueModel->createVariantValue(
+                                $variantTypeId,
+                                $value
+                            );
 
-                        $this->variantCombinationModel->create([
-                            'productVariantId' => $variantId,
-                            'variantValueId' => $variantValueId
-                        ]);
+                            $this->variantCombinationModel->create([
+                                'productVariantId' => $variantId,
+                                'variantValueId' => $variantValueId
+                            ]);
+                        }
                     }
                 }
-            }
 
                 $this->db->commit();
 
@@ -302,7 +302,7 @@ class ProductController extends BaseController
 
             header('Content-Type: application/json');
             $this->db->beginTransaction();
-            
+
             // 1. Khởi tạo mảng productData trước
             $productData = [];
 
@@ -327,11 +327,11 @@ class ProductController extends BaseController
             if (isset($_POST['status'])) {
                 $status = $_POST['status'];
                 $validStatuses = ['ON_SALE', 'SUSPENDED', 'OUT_OF_STOCK'];
-                
+
                 if (!in_array($status, $validStatuses)) {
                     throw new Exception("Invalid status value: " . $status);
                 }
-                
+
                 $productData['status'] = $_POST['status'];
             }
 
@@ -358,7 +358,7 @@ class ProductController extends BaseController
                 // Upload ảnh mới
                 $mainImageFile = $_FILES['mainImage'];
                 $mainImageUrl = $this->uploadSingleImage($mainImageFile);
-                
+
                 // Lưu thông tin ảnh mới
                 $this->productImageModel->create([
                     'productId' => $id,

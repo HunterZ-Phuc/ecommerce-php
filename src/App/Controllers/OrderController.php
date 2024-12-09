@@ -47,7 +47,7 @@ class OrderController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $status = $_POST['status'];
             $this->orderModel->updateStatus($id, $status);
-            
+
             if ($status === 'DELIVERED') {
                 $payment = $this->paymentModel->findByOrderId($id);
                 $this->paymentModel->updateStatus($payment['id'], 'COMPLETED');
@@ -57,4 +57,4 @@ class OrderController extends BaseController
             exit;
         }
     }
-} 
+}

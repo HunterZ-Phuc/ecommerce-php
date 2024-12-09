@@ -45,4 +45,4 @@ class PaymentController extends BaseController
         // Logic tạo mã QR cho thanh toán
         return 'qr_code_' . time() . '.png';
     }
-} 
+}

@@ -12,20 +12,20 @@
 
                         <div class="mb-3">
                             <label class="form-label">Email</label>
-                            <input type="email" name="email" class="form-control" 
-                                   value="<?= $employee['email'] ?>" required>
+                            <input type="email" name="email" class="form-control" value="<?= $employee['email'] ?>"
+                                required>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Họ và tên</label>
-                            <input type="text" name="fullName" class="form-control" 
-                                   value="<?= $employee['fullName'] ?>" required>
+                            <input type="text" name="fullName" class="form-control" value="<?= $employee['fullName'] ?>"
+                                required>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Ngày sinh</label>
-                            <input type="date" name="dateOfBirth" class="form-control" 
-                                   value="<?= $employee['dateOfBirth'] ?>">
+                            <input type="date" name="dateOfBirth" class="form-control"
+                                value="<?= $employee['dateOfBirth'] ?>">
                         </div>
 
                         <div class="mb-3">
@@ -39,20 +39,19 @@
 
                         <div class="mb-3">
                             <label class="form-label">Số điện thoại</label>
-                            <input type="text" name="phone" class="form-control" 
-                                   value="<?= $employee['phone'] ?>" required>
+                            <input type="text" name="phone" class="form-control" value="<?= $employee['phone'] ?>" required>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Địa chỉ</label>
-                            <input type="text" name="address" class="form-control" 
-                                   value="<?= $employee['address'] ?>" required>
+                            <input type="text" name="address" class="form-control" value="<?= $employee['address'] ?>"
+                                required>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Lương</label>
-                            <input type="number" name="salary" class="form-control" 
-                                   value="<?= $employee['salary'] ?>" required>
+                            <input type="number" name="salary" class="form-control" value="<?= $employee['salary'] ?>"
+                                required>
                         </div>
 
                         <div class="modal-footer px-0 pb-0">

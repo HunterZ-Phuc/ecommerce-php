@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,20 +13,21 @@
         body {
             background-color: #f8f9fa;
             height: 100vh;
-            overflow: hidden; /* Ngăn scroll */
+            overflow: hidden;
+            /* Ngăn scroll */
         }
-        
+
         .error-template {
             padding: 40px 15px;
             text-align: center;
         }
-        
+
         .error-code {
             font-size: 160px;
             font-weight: bold;
             color: #000000;
         }
-        
+
         .error-message {
             font-size: 24px;
             margin: 20px 0;
@@ -42,10 +44,11 @@
 
         .btn-primary:hover {
             transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="row">
@@ -70,5 +73,5 @@
     <!-- Bootstrap Bundle với Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-</html>
 
+</html>

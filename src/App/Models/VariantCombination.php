@@ -13,7 +13,7 @@ class VariantCombination extends BaseModel
         try {
             $sql = "INSERT INTO variant_combinations (productVariantId, variantValueId) 
                     VALUES (:productVariantId, :variantValueId)";
-            
+
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([
                 'productVariantId' => $productVariantId,

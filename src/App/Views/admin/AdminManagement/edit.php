@@ -9,19 +9,18 @@
                 <div class="modal-body">
                     <form action="/ecommerce-php/admin/admin-management/edit/<?= $admin['id'] ?>" method="POST">
                         <input type="hidden" name="id" value="<?= $admin['id'] ?>">
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Username</label>
-                            <input type="text" name="username" class="form-control" 
-                                   value="<?= $admin['username'] ?>" required>
+                            <input type="text" name="username" class="form-control" value="<?= $admin['username'] ?>"
+                                required>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Email</label>
-                            <input type="email" name="email" class="form-control" 
-                                   value="<?= $admin['email'] ?>" required>
+                            <input type="email" name="email" class="form-control" value="<?= $admin['email'] ?>" required>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Password (để trống nếu không đổi)</label>
                             <input type="password" name="password" class="form-control">
@@ -36,4 +35,4 @@
             </div>
         </div>
     </div>
-<?php endforeach; ?> 
+<?php endforeach; ?>

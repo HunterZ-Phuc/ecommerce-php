@@ -15,17 +15,14 @@
                 <?php endif; ?>
             </div>
             <div class="mt-2 d-flex justify-content-end">
-                <button class="btn btn-link text-primary p-0" 
-                        onclick="editAddress(<?= $address['id'] ?>)">
+                <button class="btn btn-link text-primary p-0" onclick="editAddress(<?= $address['id'] ?>)">
                     Cập nhật
                 </button>
                 <?php if (!$address['isDefault']): ?>
-                    <button class="btn btn-link text-primary p-0 ms-2"
-                            onclick="deleteAddress(<?= $address['id'] ?>)">
+                    <button class="btn btn-link text-primary p-0 ms-2" onclick="deleteAddress(<?= $address['id'] ?>)">
                         Xóa
                     </button>
-                    <button class="btn btn-link text-primary p-0 ms-2"
-                            onclick="setDefaultAddress(<?= $address['id'] ?>)">
+                    <button class="btn btn-link text-primary p-0 ms-2" onclick="setDefaultAddress(<?= $address['id'] ?>)">
                         Thiết lập mặc định
                     </button>
                 <?php endif; ?>
@@ -33,9 +30,7 @@
         </div>
     <?php endforeach; ?>
 
-    <button class="mt-4 btn btn-danger text-white px-4 py-2" 
-            data-bs-toggle="modal" 
-            data-bs-target="#addressModal">
+    <button class="mt-4 btn btn-danger text-white px-4 py-2" data-bs-toggle="modal" data-bs-target="#addressModal">
         + Thêm địa chỉ mới
     </button>
 </div>
@@ -74,73 +69,73 @@
 </div>
 
 <script>
-const addressModal = new bootstrap.Modal(document.getElementById('addressModal'));
+    const addressModal = new bootstrap.Modal(document.getElementById('addressModal'));
 
-function editAddress(id) {
-    fetch(`/ecommerce-php/user/address/${id}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById('modalTitle').textContent = 'Cập nhật địa chỉ';
-                const form = document.getElementById('addressForm');
-                form.id.value = data.address.id;
-                form.fullName.value = data.address.fullName;
-                form.phoneNumber.value = data.address.phoneNumber;
-                form.address.value = data.address.address;
-                addressModal.show();
-            }
-        });
-}
+    function editAddress(id) {
+        fetch(`/ecommerce-php/user/address/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('modalTitle').textContent = 'Cập nhật địa chỉ';
+                    const form = document.getElementById('addressForm');
+                    form.id.value = data.address.id;
+                    form.fullName.value = data.address.fullName;
+                    form.phoneNumber.value = data.address.phoneNumber;
+                    form.address.value = data.address.address;
+                    addressModal.show();
+                }
+            });
+    }
 
-function saveAddress() {
-    const form = document.getElementById('addressForm');
-    const formData = new FormData(form);
-    const id = form.id.value;
-    const url = id ? 
-        `/ecommerce-php/user/address/update/${id}` : 
-        '/ecommerce-php/user/address/create';
+    function saveAddress() {
+        const form = document.getElementById('addressForm');
+        const formData = new FormData(form);
+        const id = form.id.value;
+        const url = id ?
+            `/ecommerce-php/user/address/update/${id}` :
+            '/ecommerce-php/user/address/create';
 
-    fetch(url, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.reload();
-        } else {
-            alert(data.error || 'Có lỗi xảy ra');
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert(data.error || 'Có lỗi xảy ra');
+                }
+            });
+    }
+
+    function deleteAddress(id) {
+        if (confirm('Bạn có chắc muốn xóa địa chỉ này?')) {
+            fetch(`/ecommerce-php/user/address/delete/${id}`, {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert(data.error || 'Có lỗi xảy ra');
+                    }
+                });
         }
-    });
-}
+    }
 
-function deleteAddress(id) {
-    if (confirm('Bạn có chắc muốn xóa địa chỉ này?')) {
-        fetch(`/ecommerce-php/user/address/delete/${id}`, {
+    function setDefaultAddress(id) {
+        fetch(`/ecommerce-php/user/address/set-default/${id}`, {
             method: 'POST'
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                window.location.reload();
-            } else {
-                alert(data.error || 'Có lỗi xảy ra');
-            }
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert(data.error || 'Có lỗi xảy ra');
+                }
+            });
     }
-}
-
-function setDefaultAddress(id) {
-    fetch(`/ecommerce-php/user/address/set-default/${id}`, {
-        method: 'POST'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.reload();
-        } else {
-            alert(data.error || 'Có lỗi xảy ra');
-        }
-    });
-}
-</script> 
+</script>

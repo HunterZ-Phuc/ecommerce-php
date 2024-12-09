@@ -80,7 +80,7 @@ class User extends BaseModel
         try {
             // Cập nhật timestamp
             $data['updatedAt'] = date('Y-m-d H:i:s');
-            
+
             return parent::update($id, $data);
         } catch (PDOException $e) {
             error_log("Error updating user: " . $e->getMessage());
@@ -139,4 +139,4 @@ class User extends BaseModel
     {
         return preg_match('/^[0-9]{10,11}$/', $phone) === 1;
     }
-} 
+}

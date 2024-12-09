@@ -30,4 +30,4 @@ class VariantTypeController extends BaseController
         $this->variantTypeModel->delete($id);
         return $this->json(['success' => true]);
     }
-} 
+}

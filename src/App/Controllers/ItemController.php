@@ -29,9 +29,9 @@ class ItemController extends BaseController
                 'quantity' => $_POST['quantity'],
                 'price' => $_POST['price']
             ];
-            
+
             $itemId = $this->itemModel->create($data);
             return $this->json(['id' => $itemId]);
         }
     }
-} 
+}

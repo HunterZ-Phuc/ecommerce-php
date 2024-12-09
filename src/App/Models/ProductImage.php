@@ -11,7 +11,7 @@ class ProductImage extends BaseModel
         try {
             $sql = "INSERT INTO product_images (productId, variantId, imageUrl, isThumbnail) 
                     VALUES (:productId, :variantId, :imageUrl, :isThumbnail)";
-            
+
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([
                 'productId' => $data['productId'],
@@ -23,7 +23,7 @@ class ProductImage extends BaseModel
             if (!$result) {
                 throw new \Exception('Không thể lưu ảnh sản phẩm');
             }
-            
+
             return $this->db->lastInsertId();
         } catch (\PDOException $e) {
             throw new \Exception('Lỗi database khi lưu ảnh: ' . $e->getMessage());

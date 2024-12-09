@@ -9,7 +9,7 @@ class AuthController extends BaseController
 {
     private $userModel;
 
-    public function __construct() 
+    public function __construct()
     {
         parent::__construct();
         $this->userModel = new User();
@@ -42,7 +42,7 @@ class AuthController extends BaseController
             try {
                 // Tìm user theo username
                 $user = $this->userModel->findByUsername($username);
-                
+
                 if (!$user) {
                     throw new Exception('Tên đăng nhập hoặc mật khẩu không đúng');
                 }
@@ -159,15 +159,15 @@ class AuthController extends BaseController
     {
         // Hủy toàn bộ session
         $this->auth->logout();
-        
+
         // Đảm bảo session được hủy hoàn toàn
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_destroy();
         }
-        
+
         // Khởi tạo session mới
         session_start();
-        
+
         header('Location: /ecommerce-php/login');
         exit();
     }
@@ -218,4 +218,4 @@ class AuthController extends BaseController
             throw new Exception('Giới tính không hợp lệ');
         }
     }
-} 
+}

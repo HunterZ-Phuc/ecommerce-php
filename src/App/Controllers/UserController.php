@@ -38,28 +38,21 @@ class UserController extends BaseController
 
         $userId = $this->auth->getUserId();
         error_log("User ID: " . $userId);
-        
+
+        // Lấy thông tin user từ database
         $user = $this->userModel->findById($userId);
-        error_log("User data: " . json_encode($user));
-        
-        if (!$user) {
-            $this->redirect('/login');
-            return;
-        }
 
-        // Mask sensitive data
-        if ($user['email']) {
-            $user['email'] = $this->maskEmail($user['email']);
-        }
-        if ($user['phone']) {
-            $user['phone'] = $this->maskPhone($user['phone']);
-        }
-
+        // Truyền đầy đủ dữ liệu vào view
         $this->view('user/account/profile', [
             'title' => 'Hồ sơ của tôi',
             'user' => $user,
-            'active_page' => 'profile'
-        ], 'user_layout');
+            'username' => $user['username'],
+            'fullName' => $user['fullName'],
+            'email' => $user['email'],
+            'phone' => $user['phone'],
+            'sex' => $user['sex'],
+            'dateOfBirth' => $user['dateOfBirth']
+        ]);
     }
 
     public function updateProfile()
@@ -70,7 +63,7 @@ class UserController extends BaseController
             }
 
             $userId = $this->auth->getUserId();
-            
+
             // Validate dữ liệu
             $fullName = $_POST['fullName'] ?? '';
             $sex = $_POST['sex'] ?? '';
@@ -106,64 +99,64 @@ class UserController extends BaseController
     {
         try {
             if (!$this->auth->isLoggedIn()) {
-                throw new Exception('Vui lòng đăng nhập');
+                throw new Exception('Unauthorized');
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Invalid request method');
             }
 
             $userId = $this->auth->getUserId();
 
+            // Xử lý upload file
             if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
-                throw new Exception('Vui lòng chọn ảnh');
+                throw new Exception('Không có file được upload');
             }
 
             $file = $_FILES['avatar'];
-            
-            // Validate file
-            $allowedTypes = ['image/jpeg', 'image/png'];
-            $maxSize = 1 * 1024 * 1024; // 1MB
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
 
             if (!in_array($file['type'], $allowedTypes)) {
-                throw new Exception('Chỉ chấp nhận file JPEG hoặc PNG');
-            }
-
-            if ($file['size'] > $maxSize) {
-                throw new Exception('Kích thước file không được vượt quá 1MB');
+                throw new Exception('Chỉ chấp nhận file ảnh (JPG, PNG, GIF)');
             }
 
             // Tạo tên file mới
             $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $newFileName = uniqid() . '.' . $extension;
+            $newFileName = 'avatar_' . $userId . '_' . time() . '.' . $extension;
             $uploadPath = ROOT_PATH . '/public/uploads/avatars/' . $newFileName;
 
             // Di chuyển file
             if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                throw new Exception('Không thể upload file');
+                throw new Exception('Không thể lưu file');
             }
 
-            // Cập nhật đường dẫn avatar trong database
-            $this->userModel->update($userId, [
-                'avatar' => '/uploads/avatars/' . $newFileName
-            ]);
+            // Cập nhật DB
+            $data = ['avatar' => '/uploads/avatars/' . $newFileName];
+            $this->userModel->update($userId, $data);
 
-            echo json_encode([
+            // Cập nhật session
+            $_SESSION['avatar'] = $data['avatar'];
+
+            $this->json([
                 'success' => true,
-                'message' => 'Cập nhật ảnh đại diện thành công'
+                'message' => 'Cập nhật avatar thành công',
+                'avatar' => $data['avatar']
             ]);
 
         } catch (Exception $e) {
-            echo json_encode([
-                'success' => false,
-                'error' => $e->getMessage()
-            ]);
+            $this->error($e->getMessage());
         }
     }
 
     protected function maskEmail($email)
     {
-        if (!$email) return '';
-        
+        if (!$email)
+            return '';
+
         $parts = explode('@', $email);
-        if (count($parts) !== 2) return $email;
-        
+        if (count($parts) !== 2)
+            return $email;
+
         $name = $parts[0];
         $domain = $parts[1];
         $maskedName = substr($name, 0, 2) . str_repeat('*', max(strlen($name) - 2, 0));
@@ -172,18 +165,91 @@ class UserController extends BaseController
 
     protected function maskPhone($phone)
     {
-        if (!$phone) return '';
+        if (!$phone)
+            return '';
         return substr($phone, 0, 3) . str_repeat('*', max(strlen($phone) - 5, 0)) . substr($phone, -2);
     }
 
     public function updateEmail()
     {
-        // TODO: Implement email update logic with OTP verification
+        try {
+            if (!$this->auth->isLoggedIn()) {
+                throw new Exception('Unauthorized');
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Invalid request method');
+            }
+
+            $userId = $this->auth->getUserId();
+            $newEmail = $_POST['email'] ?? '';
+
+            // Validate email
+            if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+                throw new Exception('Email không hợp lệ');
+            }
+
+            // Kiểm tra email đã tồn tại
+            if ($this->userModel->findByEmail($newEmail)) {
+                throw new Exception('Email đã được sử dụng');
+            }
+
+            // Cập nhật DB
+            $this->userModel->update($userId, ['email' => $newEmail]);
+
+            // Cập nhật session
+            $_SESSION['user_email'] = $newEmail;
+
+            $this->json([
+                'success' => true,
+                'message' => 'Cập nhật email thành công',
+                'email' => $newEmail
+            ]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
     }
 
     public function updatePhone()
     {
-        // TODO: Implement phone update logic with OTP verification
+        try {
+            if (!$this->auth->isLoggedIn()) {
+                throw new Exception('Unauthorized');
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Invalid request method');
+            }
+
+            $userId = $this->auth->getUserId();
+            $newPhone = $_POST['phone'] ?? '';
+
+            // Validate phone
+            if (!preg_match('/^[0-9]{10,11}$/', $newPhone)) {
+                throw new Exception('Số điện thoại không hợp lệ');
+            }
+
+            // Kiểm tra phone đã tồn tại
+            if ($this->userModel->findByPhone($newPhone)) {
+                throw new Exception('Số điện thoại đã được sử dụng');
+            }
+
+            // Cập nhật DB
+            $this->userModel->update($userId, ['phone' => $newPhone]);
+
+            // Cập nhật session
+            $_SESSION['user_phone'] = $newPhone;
+
+            $this->json([
+                'success' => true,
+                'message' => 'Cập nhật số điện thoại thành công',
+                'phone' => $newPhone
+            ]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
     }
 
     public function addresses()
@@ -260,7 +326,7 @@ class UserController extends BaseController
             }
 
             $userId = $this->auth->getUserId();
-            
+
             // Validate dữ liệu
             $fullName = $_POST['fullName'] ?? '';
             $phoneNumber = $_POST['phoneNumber'] ?? '';
@@ -334,4 +400,4 @@ class UserController extends BaseController
             $this->error($e->getMessage());
         }
     }
-} 
+}

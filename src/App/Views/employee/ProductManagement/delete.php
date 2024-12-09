@@ -8,7 +8,8 @@
                 </div>
                 <div class="modal-body">
                     <p>Bạn có chắc chắn muốn xóa sản phẩm "<?= $product['productName'] ?>" không?</p>
-                    <p class="text-danger">Lưu ý: Hành động này sẽ xóa tất cả thông tin liên quan đến sản phẩm bao gồm biến thể, hình ảnh và không thể khôi phục.</p>
+                    <p class="text-danger">Lưu ý: Hành động này sẽ xóa tất cả thông tin liên quan đến sản phẩm bao gồm biến
+                        thể, hình ảnh và không thể khôi phục.</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
@@ -20,23 +21,23 @@
 <?php endforeach; ?>
 
 <script>
-async function deleteProduct(id) {
-    try {
-        const response = await fetch(`/ecommerce-php/employee/product-management/delete/${id}`, {
-            method: 'POST'
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            alert(result.message);
-            window.location.reload();
-        } else {
-            alert(result.error || 'Có lỗi xảy ra khi xóa sản phẩm');
+    async function deleteProduct(id) {
+        try {
+            const response = await fetch(`/ecommerce-php/employee/product-management/delete/${id}`, {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert(result.message);
+                window.location.reload();
+            } else {
+                alert(result.error || 'Có lỗi xảy ra khi xóa sản phẩm');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi xóa sản phẩm');
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Có lỗi xảy ra khi xóa sản phẩm');
     }
-}
 </script>

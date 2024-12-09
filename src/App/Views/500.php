@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,7 +23,7 @@
             font-size: 180px;
             font-weight: bold;
             color: #dc3545;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
             animation: pulse 2s infinite;
         }
 
@@ -58,10 +59,11 @@
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="row">
@@ -74,10 +76,10 @@
                     <h1 class="error-message">Lỗi Máy Chủ Nội Bộ</h1>
                     <div class="error-details mb-4">
                         Xin lỗi, đã xảy ra lỗi trong quá trình xử lý yêu cầu của bạn.
-                        Chúng tôi đã ghi nhận sự cố này và đang khắc phục. 
+                        Chúng tôi đã ghi nhận sự cố này và đang khắc phục.
                         Vui lòng thử lại sau hoặc liên hệ với đội ngũ hỗ trợ.
                     </div>
-                    
+
                     <div class="error-actions">
                         <div class="d-flex flex-column">
                             <button onclick="window.location.reload()" class="btn btn-danger btn-lg mb-2">
@@ -95,4 +97,5 @@
         </div>
     </div>
 </body>
+
 </html>

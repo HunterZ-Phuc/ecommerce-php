@@ -28,7 +28,7 @@ class ProductVariant extends BaseModel
 
             $sql = "INSERT INTO product_variants (productId, price, quantity) 
                     VALUES (:productId, :price, :quantity)";
-            
+
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([
                 'productId' => $data['productId'],
@@ -52,19 +52,19 @@ class ProductVariant extends BaseModel
             // Tạo câu lệnh SQL động dựa trên dữ liệu cần cập nhật
             $updateFields = [];
             $params = [];
-            
+
             foreach ($data as $key => $value) {
                 $updateFields[] = "{$key} = :{$key}";
                 $params[$key] = $value;
             }
-            
+
             if (empty($updateFields)) {
                 return true; // Không có gì để cập nhật
             }
-            
+
             $sql = "UPDATE {$this->table} SET " . implode(', ', $updateFields) . " WHERE id = :id";
             $params['id'] = $id;
-            
+
             $stmt = $this->db->prepare($sql);
             return $stmt->execute($params);
         } catch (\PDOException $e) {
@@ -93,4 +93,4 @@ class ProductVariant extends BaseModel
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['productId' => $productId]);
     }
-} 
+}

@@ -7,15 +7,17 @@
             <form id="profileForm" action="/ecommerce-php/user/profile/update" method="POST">
                 <div class="mb-3">
                     <label class="form-label">Tên đăng nhập</label>
-                    <input type="text" class="form-control" value="<?= htmlspecialchars($user['username']) ?>" readonly />
+                    <input type="text" 
+                           name="username" 
+                           value="<?= isset($username) ? htmlspecialchars($username) : '' ?>" 
+                           readonly />
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Họ và tên</label>
                     <input type="text" 
                            name="fullName" 
-                           class="form-control" 
-                           value="<?= htmlspecialchars($user['fullName']) ?>" 
+                           value="<?= isset($fullName) ? htmlspecialchars($fullName) : '' ?>"
                            required />
                 </div>
 
@@ -23,8 +25,8 @@
                     <label class="form-label">Email</label>
                     <div class="input-group">
                         <input type="email" 
-                               class="form-control" 
-                               value="<?= $user['email'] ?>" 
+                               name="email" 
+                               value="<?= isset($email) ? htmlspecialchars($email) : '' ?>" 
                                readonly />
                         <button type="button" 
                                 class="btn btn-outline-primary" 
@@ -38,9 +40,9 @@
                 <div class="mb-3">
                     <label class="form-label">Số điện thoại</label>
                     <div class="input-group">
-                        <input type="text" 
-                               class="form-control" 
-                               value="<?= $user['phone'] ?>" 
+                        <input type="tel" 
+                               name="phone" 
+                               value="<?= isset($phone) ? htmlspecialchars($phone) : '' ?>" 
                                readonly />
                         <button type="button" 
                                 class="btn btn-outline-primary"
@@ -56,17 +58,17 @@
                     <div class="d-flex gap-4">
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="sex" value="Male" 
-                                <?= $user['sex'] == 'Male' ? 'checked' : '' ?> />
+                                <?= (isset($sex) && $sex == 'Male') ? 'checked' : '' ?> />
                             <label class="form-check-label">Nam</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="sex" value="Female"
-                                <?= $user['sex'] == 'Female' ? 'checked' : '' ?> />
+                                <?= (isset($sex) && $sex == 'Female') ? 'checked' : '' ?> />
                             <label class="form-check-label">Nữ</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="sex" value="Other"
-                                <?= $user['sex'] == 'Other' ? 'checked' : '' ?> />
+                                <?= (isset($sex) && $sex == 'Other') ? 'checked' : '' ?> />
                             <label class="form-check-label">Khác</label>
                         </div>
                     </div>
@@ -76,8 +78,7 @@
                     <label class="form-label">Ngày sinh</label>
                     <input type="date" 
                            name="dateOfBirth" 
-                           class="form-control" 
-                           value="<?= $user['dateOfBirth'] ?>" 
+                           value="<?= isset($dateOfBirth) ? htmlspecialchars($dateOfBirth) : '' ?>" 
                            required />
                 </div>
 

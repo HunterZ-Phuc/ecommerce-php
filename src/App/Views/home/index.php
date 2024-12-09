@@ -13,7 +13,8 @@
                             <?php foreach ($categories as $category): ?>
                                 <li>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="categories[]" value="<?= $category['id'] ?>">
+                                        <input class="form-check-input" type="checkbox" name="categories[]"
+                                            value="<?= $category['id'] ?>">
                                         <label class="form-check-label">
                                             <?= htmlspecialchars($category['name']) ?>
                                         </label>
@@ -52,35 +53,36 @@
             <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
                 <?php foreach ($products as $product): ?>
                     <?php
-                        // Tính tổng số lượng của tất cả các biến thể
-                        $totalQuantity = array_reduce($product['variants'], function($carry, $variant) {
-                            return $carry + $variant['quantity'];
-                        }, 0);
+                    // Tính tổng số lượng của tất cả các biến thể
+                    $totalQuantity = array_reduce($product['variants'], function ($carry, $variant) {
+                        return $carry + $variant['quantity'];
+                    }, 0);
 
-                        // Tính phần trăm đã bán
-                        $soldPercent = $totalQuantity > 0 ? ($product['sold'] / $totalQuantity) * 100 : 0;
+                    // Tính phần trăm đã bán
+                    $soldPercent = $totalQuantity > 0 ? ($product['sold'] / $totalQuantity) * 100 : 0;
                     ?>
                     <div class="col">
                         <div class="card h-100 shadow-sm position-relative">
-                            <a href="<?= '/ecommerce-php/product/' . $product['id'] ?>" class="text-decoration-none text-dark">
+                            <a href="<?= '/ecommerce-php/product/' . $product['id'] ?>"
+                                class="text-decoration-none text-dark">
                                 <?php if ($product['salePercent'] > 0): ?>
                                     <span class="position-absolute top-0 start-0 bg-danger text-white px-2 py-1 small fw-bold">
                                         -<?= $product['salePercent'] ?>%
                                     </span>
                                 <?php endif; ?>
-                                
-                                <img src="<?= '/ecommerce-php/public' . ($product['mainImage'] ?? '/assets/images/no-image.png') ?>" 
-                                     class="card-img-top" 
-                                     alt="<?= htmlspecialchars($product['productName']) ?>"
-                                     style="height: 200px; object-fit: cover;">
-                                     
+
+                                <img src="<?= '/ecommerce-php/public' . ($product['mainImage'] ?? '/assets/images/no-image.png') ?>"
+                                    class="card-img-top" alt="<?= htmlspecialchars($product['productName']) ?>"
+                                    style="height: 200px; object-fit: cover;">
+
                                 <div class="card-body p-3">
-                                    <h5 class="card-title fw-semibold mb-3"><?= htmlspecialchars($product['productName']) ?></h5>
-                                    
+                                    <h5 class="card-title fw-semibold mb-3"><?= htmlspecialchars($product['productName']) ?>
+                                    </h5>
+
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <?php if ($product['salePercent'] > 0): ?>
                                             <span class="fs-5 fw-bold text-danger">
-                                                <?= number_format($product['price'] * (1 - $product['salePercent']/100), 0, ',', '.') ?>₫
+                                                <?= number_format($product['price'] * (1 - $product['salePercent'] / 100), 0, ',', '.') ?>₫
                                             </span>
                                             <span class="text-muted text-decoration-line-through">
                                                 <?= number_format($product['price'], 0, ',', '.') ?>₫
@@ -93,15 +95,14 @@
                                     </div>
 
                                     <div class="progress mb-2" style="height: 8px;">
-                                        <div class="progress-bar bg-success" 
-                                             role="progressbar" 
-                                             style="width: <?= $soldPercent ?>%" 
-                                             aria-valuenow="<?= $product['sold'] ?>" 
-                                             aria-valuemin="0" 
-                                             aria-valuemax="<?= $totalQuantity ?>">
+                                        <div class="progress-bar bg-success" role="progressbar"
+                                            style="width: <?= $soldPercent ?>%" aria-valuenow="<?= $product['sold'] ?>"
+                                            aria-valuemin="0" aria-valuemax="<?= $totalQuantity ?>">
                                         </div>
                                     </div>
-                                    <p class="text-muted small mb-0">Đã bán <?= number_format($product['sold'], 0, ',', '.') ?> / <?= number_format($totalQuantity, 0, ',', '.') ?></p>
+                                    <p class="text-muted small mb-0">Đã bán
+                                        <?= number_format($product['sold'], 0, ',', '.') ?> /
+                                        <?= number_format($totalQuantity, 0, ',', '.') ?></p>
                                 </div>
                             </a>
                         </div>
@@ -132,13 +133,13 @@
 <style>
     .card {
         transition: all 0.3s ease;
-        border: 1px solid rgba(0,0,0,.125);
+        border: 1px solid rgba(0, 0, 0, .125);
         overflow: hidden;
     }
-    
+
     .card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
     }
 
     .card img {

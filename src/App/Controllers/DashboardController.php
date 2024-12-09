@@ -6,7 +6,7 @@ class DashboardController extends BaseController
 {
     public function index()
     {
-        // Tạo nội dung cho trang dashboard
+        // TODO: nao sửa thống kê ở đây
         $content = '<div class="container mt-4">
             <h1>Chào mừng đến với Trang quản trị</h1>
             <div class="row mt-4">

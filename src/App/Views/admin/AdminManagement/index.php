@@ -34,31 +34,27 @@
     </thead>
     <tbody>
         <?php foreach ($admins as $admin): ?>
-        <tr>
-            <td><?= $admin['id'] ?></td>
-            <td><?= $admin['username'] ?></td>
-            <td><?= $admin['email'] ?></td>
-            <td><?= $admin['createdAt'] ?></td>
-            <td>
-                <button type="button" 
-                        class="btn btn-sm btn-warning" 
-                        data-bs-toggle="modal" 
+            <tr>
+                <td><?= $admin['id'] ?></td>
+                <td><?= $admin['username'] ?></td>
+                <td><?= $admin['email'] ?></td>
+                <td><?= $admin['createdAt'] ?></td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
                         data-bs-target="#editModal<?= $admin['id'] ?>">
-                    Sửa
-                </button>
-                <button type="button" 
-                        class="btn btn-sm btn-danger" 
-                        data-bs-toggle="modal" 
+                        Sửa
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal"
                         data-bs-target="#deleteModal<?= $admin['id'] ?>">
-                    Xóa
-                </button>
-            </td>
-        </tr>
+                        Xóa
+                    </button>
+                </td>
+            </tr>
         <?php endforeach; ?>
     </tbody>
 </table>
 
-<?php 
+<?php
 require_once ROOT_PATH . '/src/App/Views/admin/AdminManagement/create.php';
 require_once ROOT_PATH . '/src/App/Views/admin/AdminManagement/edit.php';
 require_once ROOT_PATH . '/src/App/Views/admin/AdminManagement/delete.php';

@@ -1,6 +1,6 @@
 <?php if (isset($_SESSION['success'])): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <?php 
+        <?php
         echo $_SESSION['success'];
         unset($_SESSION['success']);
         ?>
@@ -10,7 +10,7 @@
 
 <?php if (isset($_SESSION['error'])): ?>
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <?php 
+        <?php
         echo $_SESSION['error'];
         unset($_SESSION['error']);
         ?>
@@ -52,20 +52,17 @@
                     }
                     ?>
                     <?php if ($mainImage): ?>
-                        <img src="<?= '/ecommerce-php/public' . $mainImage['imageUrl'] ?>" 
-                             alt="<?= htmlspecialchars($product['productName']) ?>"
-                             class="img-thumbnail" 
-                             style="width: 50px; height: 50px; object-fit: cover;">
+                        <img src="<?= '/ecommerce-php/public' . $mainImage['imageUrl'] ?>"
+                            alt="<?= htmlspecialchars($product['productName']) ?>" class="img-thumbnail"
+                            style="width: 50px; height: 50px; object-fit: cover;">
                     <?php else: ?>
-                        <img src="/ecommerce-php/public/assets/images/no-image.png" 
-                             alt="No Image" 
-                             class="img-thumbnail" 
-                             style="width: 50px; height: 50px; object-fit: cover;">
+                        <img src="/ecommerce-php/public/assets/images/no-image.png" alt="No Image" class="img-thumbnail"
+                            style="width: 50px; height: 50px; object-fit: cover;">
                     <?php endif; ?>
                 </td>
                 <td><?= $product['productName'] ?></td>
                 <td>
-                    <?php 
+                    <?php
                     $categoryLabels = [
                         'FRUITS' => 'Trái cây',
                         'VEGETABLES' => 'Rau củ',
@@ -78,16 +75,12 @@
                 <td><?= number_format($product['sold']) ?></td>
                 <td><?= $product['status'] ?></td>
                 <td>
-                    <button type="button" 
-                            class="btn btn-sm btn-warning" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#editModal-<?= $product['id'] ?>">
+                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
+                        data-bs-target="#editModal-<?= $product['id'] ?>">
                         Sửa
                     </button>
-                    <button type="button" 
-                            class="btn btn-sm btn-danger" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#deleteModal-<?= $product['id'] ?>">
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                        data-bs-target="#deleteModal-<?= $product['id'] ?>">
                         Xóa
                     </button>
                 </td>
@@ -96,7 +89,7 @@
     </tbody>
 </table>
 
-<?php 
+<?php
 require_once ROOT_PATH . '/src/App/Views/employee/ProductManagement/create.php';
 require_once ROOT_PATH . '/src/App/Views/employee/ProductManagement/edit.php';
 require_once ROOT_PATH . '/src/App/Views/employee/ProductManagement/delete.php';
@@ -149,4 +142,3 @@ require_once ROOT_PATH . '/src/App/Views/employee/ProductManagement/delete.php';
         });
     });
 </script>
-

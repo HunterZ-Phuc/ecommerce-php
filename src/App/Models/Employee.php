@@ -6,21 +6,24 @@ class Employee extends BaseModel
 {
     protected $table = 'employees';
 
-    public function findByUsername($username) {
+    public function findByUsername($username)
+    {
         $sql = "SELECT * FROM {$this->table} WHERE username = :username";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['username' => $username]);
         return $stmt->fetch(\PDO::FETCH_ASSOC);
     }
 
-    public function findByEmail($email) {
+    public function findByEmail($email)
+    {
         $sql = "SELECT * FROM {$this->table} WHERE email = :email";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['email' => $email]);
         return $stmt->fetch(\PDO::FETCH_ASSOC);
     }
 
-    public function create($data) { // Tạo hàm create để lưu dữ liệu vào database
+    public function create($data)
+    { // Tạo hàm create để lưu dữ liệu vào database
         $data['eRole'] = 'EMPLOYEE'; // Gán role cho nhân viên
         $data['createdAt'] = date('Y-m-d H:i:s'); // Gán ngày tạo
         $data['avatar'] = $data['avatar'] ?? 'default-avatar.jpg'; // Mặc định avatar
@@ -32,8 +35,9 @@ class Employee extends BaseModel
         return parent::create($data); // Gọi hàm create của BaseModel để lưu dữ liệu vào database
     }
 
-    public function update($id, $data) {
+    public function update($id, $data)
+    {
         $data['updatedAt'] = date('Y-m-d H:i:s'); // Gán ngày cập nhật
-            return parent::update($id, $data); // Gọi hàm update của BaseModel để cập nhật dữ liệu vào database
+        return parent::update($id, $data); // Gọi hàm update của BaseModel để cập nhật dữ liệu vào database
     }
-} 
+}

@@ -7,11 +7,12 @@ namespace Core;
 class Router
 {
     protected $routes = [];
-    
-    public function __construct() {
+
+    public function __construct()
+    {
         // Không yêu cầu tham số nữa
     }
-    
+
     public function add($route, $params = [])
     {
         // Chuyển đổi route pattern thành regex
@@ -19,10 +20,10 @@ class Router
         $route = preg_replace('/\{([a-z]+)\}/', '(?P<\1>[^\/]+)', $route);
         $route = preg_replace('/\{([a-z]+):([^\}]+)\}/', '(?P<\1>\2)', $route);
         $route = '/^' . $route . '$/i';
-        
+
         $this->routes[$route] = $params;
     }
-    
+
     public function match($url)
     {
         foreach ($this->routes as $route => $params) {
@@ -30,7 +31,7 @@ class Router
                 // Lấy các tham số động từ URL
                 foreach ($matches as $key => $match) {
                     if (is_string($key)) {
-                        if(!isset($params['params'])) {
+                        if (!isset($params['params'])) {
                             $params['params'] = [];
                         }
                         $params['params'][$key] = $match;

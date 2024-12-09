@@ -73,26 +73,26 @@ class Address extends BaseModel
             }
 
             // Loại bỏ userId khỏi data trước khi cập nhật
-            $updateData = array_filter($data, function($key) {
+            $updateData = array_filter($data, function ($key) {
                 return $key !== 'userId';
             }, ARRAY_FILTER_USE_KEY);
 
             // Tạo câu lệnh SQL động dựa trên dữ liệu cần cập nhật
             $updateFields = [];
             $params = [];
-            
+
             foreach ($updateData as $key => $value) {
                 $updateFields[] = "{$key} = :{$key}";
                 $params[$key] = $value;
             }
-            
+
             if (empty($updateFields)) {
                 return true; // Không có gì để cập nhật
             }
-            
+
             $sql = "UPDATE {$this->table} SET " . implode(', ', $updateFields) . " WHERE id = :id";
             $params['id'] = $id;
-            
+
             $stmt = $this->db->prepare($sql);
             return $stmt->execute($params);
 
@@ -180,7 +180,7 @@ class Address extends BaseModel
             $sql = "SELECT isDefault FROM {$this->table} WHERE id = :id AND userId = :userId";
             $stmt = $this->db->prepare($sql);
             $stmt->execute(['id' => $id, 'userId' => $userId]);
-            return (bool)$stmt->fetchColumn();
+            return (bool) $stmt->fetchColumn();
         } catch (PDOException $e) {
             error_log("Error checking default address: " . $e->getMessage());
             return false;
@@ -193,10 +193,10 @@ class Address extends BaseModel
             $sql = "SELECT COUNT(*) FROM {$this->table} WHERE userId = :userId";
             $stmt = $this->db->prepare($sql);
             $stmt->execute(['userId' => $userId]);
-            return (int)$stmt->fetchColumn();
+            return (int) $stmt->fetchColumn();
         } catch (PDOException $e) {
             error_log("Error counting user addresses: " . $e->getMessage());
             return 0;
         }
     }
-} 
+}

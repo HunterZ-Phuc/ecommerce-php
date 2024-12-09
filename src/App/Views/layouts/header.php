@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -45,25 +44,25 @@
                 <!-- Tài khoản -->
                 <?php if ($user['isLoggedIn']): ?>
                     <div class="dropdown">
-                        <button class="btn d-flex align-items-center bg-primary text-white px-3 py-2 rounded" 
-                                type="button" 
-                                id="dropdownMenuButton" 
-                                data-bs-toggle="dropdown" 
-                                aria-expanded="false">
-                            <img src="<?= $user['avatar'] ?? 'https://openui.fly.dev/openui/24x24.svg?text=👤' ?>" 
-                                 alt="user-avatar" 
-                                 class="custom-avatar"
-                                 style="width: 24px; height: 24px; border-radius: 50%;">
+                        <button class="btn dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <img src="<?= $user['avatar'] ?? 'https://openui.fly.dev/openui/24x24.svg?text=👤' ?>"
+                                alt="user-avatar" class="custom-avatar"
+                                style="width: 24px; height: 24px; border-radius: 50%;">
                             <span class="ms-2"><?= htmlspecialchars($user['name']) ?></span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="ms-2" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M1.5 6.5a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1h-12a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1h-12a.5.5 0 0 1-.5-.5z"/>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="ms-2" width="20" height="20" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path fill-rule="evenodd"
+                                    d="M1.5 6.5a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1h-12a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1h-12a.5.5 0 0 1-.5-.5z" />
                             </svg>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
                             <li><a class="dropdown-item" href="/ecommerce-php/user/profile">Tài Khoản Của Tôi</a></li>
                             <li><a class="dropdown-item" href="/ecommerce-php/user/orders">Đơn Mua</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/ecommerce-php/logout">Đăng Xuất</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/ecommerce-php/logout">Đăng xuất</a></li>
                         </ul>
                     </div>
                 <?php else: ?>

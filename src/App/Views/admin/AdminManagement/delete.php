@@ -12,7 +12,7 @@
                         <p>Bạn có chắc chắn muốn xóa admin này?</p>
                         <p><strong>Username:</strong> <?= $admin['username'] ?></p>
                         <p><strong>Email:</strong> <?= $admin['email'] ?></p>
-                        
+
                         <div class="modal-footer px-0 pb-0">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                             <button type="submit" class="btn btn-danger">Xác nhận xóa</button>
