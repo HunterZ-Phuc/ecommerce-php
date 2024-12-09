@@ -54,7 +54,6 @@ CREATE TABLE users (
   `phone` varchar(20) NOT NULL,
   `email` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `eRole` enum('ADMIN','EMPLOYEE','USER') NOT NULL DEFAULT 'USER',
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `updatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
@@ -68,7 +67,6 @@ CREATE TABLE admins (
   `username` varchar(50) NOT NULL,
   `email` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `eRole` enum('ADMIN','EMPLOYEE','USER') NOT NULL DEFAULT 'ADMIN',
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `updatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
@@ -88,7 +86,6 @@ CREATE TABLE employees (
   `address` text NOT NULL,
   `salary` decimal(10,0) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `eRole` enum('ADMIN','EMPLOYEE','USER') NOT NULL DEFAULT 'EMPLOYEE',
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `updatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
@@ -122,9 +119,7 @@ CREATE TABLE products (
     'GRAINS',
     'OTHERS'
   ) NOT NULL,
-  `price` decimal(15,2) NOT NULL CHECK (price >= 0),
   `salePercent` int DEFAULT 0 CHECK (salePercent >= 0 AND salePercent <= 100),
-  `stockQuantity` int(11) NOT NULL CHECK (stockQuantity >= 0),
   `sold` int(11) NOT NULL DEFAULT 0 CHECK (sold >= 0),
   `status` enum(
     'ON_SALE',
@@ -215,7 +210,7 @@ CREATE TABLE orders (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `userId` int(11) NOT NULL,
   `addressId` int(11) NULL,
-  `productList` text NOT NULL,
+  `items` text NOT NULL,
   `totalAmount` decimal(10,2) NOT NULL,
   `orderDate` datetime NOT NULL,
   `shippingDate` datetime DEFAULT NULL,
@@ -247,6 +242,7 @@ CREATE TABLE items (
   `productId` int(11) NOT NULL,
   `variantId` int(11) NOT NULL,
   `quantity` int(11) NOT NULL,
+  `orderId` int(11) NOT NULL,
   `orderId` int(11) NOT NULL,
   `price` decimal(15,2) NOT NULL,
   PRIMARY KEY (`id`),
@@ -362,29 +358,25 @@ DELIMITER ;
 
 -- Thêm trigger tự động cập nhật trạng thái sản phẩm
 DELIMITER //
-CREATE TRIGGER after_update_variant_quantity
+CREATE OR REPLACE TRIGGER after_update_variant_quantity
 AFTER UPDATE ON product_variants
 FOR EACH ROW
 BEGIN
     DECLARE total_quantity INT;
     
-    -- Tính tổng số lượng của tất cả biến the
+    -- Tính tổng số lượng của tất cả biến thể
     SELECT SUM(quantity) INTO total_quantity
     FROM product_variants
     WHERE productId = NEW.productId;
     
-    -- Cập nhật trạng thái sản phẩm
+    -- Chỉ cập nhật status khi số lượng = 0
     IF total_quantity = 0 THEN
         UPDATE products 
         SET status = 'OUT_OF_STOCK'
         WHERE id = NEW.productId;
-    ELSE
-        UPDATE products 
-        SET status = 'ON_SALE'
-        WHERE id = NEW.productId;
     END IF;
 END //
-DELIMITER ; 
+DELIMITER ;
 
 -- View báo cáo doanh thu theo tháng
 CREATE VIEW monthly_revenue_report AS

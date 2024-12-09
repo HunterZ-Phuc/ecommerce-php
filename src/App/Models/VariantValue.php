@@ -41,4 +41,19 @@ class VariantValue extends BaseModel
         $result = $stmt->fetch();
         return $result ? $result['id'] : null;
     }
+
+    public function deleteByTypeId($typeId)
+    {
+        $sql = "DELETE FROM variant_values WHERE variantTypeId = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$typeId]);
+    }
+
+    public function findByTypeId($typeId)
+    {
+        $sql = "SELECT * FROM variant_values WHERE variantTypeId = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$typeId]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
 }

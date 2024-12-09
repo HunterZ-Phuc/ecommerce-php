@@ -33,12 +33,48 @@ class ProductController extends BaseController
         $this->db = Database::getInstance()->getConnection();
     }
 
+    // public function index()
+    // {
+    //     $products = $this->productModel->findAll();
+    //     $this->view('employee/ProductManagement/index', [
+    //         'title' => 'Quản lý Sản phẩm',
+    //         'products' => $products
+    //     ]);
+    // }
     public function index()
     {
         $products = $this->productModel->findAll();
+
+        foreach ($products as &$product) {
+            // Lấy tất cả ảnh của sản phẩm, bao gồm cả ảnh chính
+            $product['images'] = $this->productImageModel->findByProductId($product['id']);
+            
+            // Lấy các biến thể
+            $product['variants'] = $this->variantModel->findByProductId($product['id']);
+            
+            foreach ($product['variants'] as &$variant) {
+                $variant['images'] = $this->productImageModel->getImagesByVariantId($variant['id']);
+                
+                $stmt = $this->db->prepare("
+                    SELECT 
+                        vt.id as typeId,
+                        vt.name as typeName,
+                        vv.id as valueId,
+                        vv.value
+                    FROM variant_combinations vc
+                    JOIN variant_values vv ON vc.variantValueId = vv.id
+                    JOIN variant_types vt ON vv.variantTypeId = vt.id
+                    WHERE vc.productVariantId = :variantId
+                    ORDER BY vt.id
+                ");
+                $stmt->execute(['variantId' => $variant['id']]);
+                $variant['combinations'] = $stmt->fetchAll();
+            }
+        }
+
         $this->view('employee/ProductManagement/index', [
             'title' => 'Quản lý Sản phẩm',
-            'products' => $products
+            'products' => $products,
         ]);
     }
 
@@ -46,21 +82,6 @@ class ProductController extends BaseController
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
-                // Debug: Log toàn bộ dữ liệu POST và FILES
-                error_log("=== DEBUG: POST Data ===");
-                error_log(print_r($_POST, true));
-                
-                error_log("=== DEBUG: FILES Data ===");
-                error_log(print_r($_FILES, true));
-
-                // Debug: Kiểm tra cụ thể ảnh biến thể
-                if (isset($_FILES['variant_images'])) {
-                    error_log("=== DEBUG: Variant Images ===");
-                    error_log(print_r($_FILES['variant_images'], true));
-                } else {
-                    error_log("Không tìm thấy dữ liệu ảnh biến thể");
-                }
-
                 $this->db->beginTransaction();
 
                 // Kiểm tra dữ liệu biến thể
@@ -75,28 +96,12 @@ class ProductController extends BaseController
                     'status' => 'ON_SALE'
                 ];
 
-                // Nếu có biến thể, set giá và số lượng mặc định là 0
-                if ($hasVariants) {
-                    $productData['price'] = 0;
-                    $productData['stockQuantity'] = 0;
-                } else {
-                    // Validate giá và số lượng cho sản phẩm không có biến thể
-                    if (empty($_POST['price']) || empty($_POST['stockQuantity'])) {
-                        throw new Exception("Giá và số lượng không được để trống");
-                    }
-                    $productData['price'] = $_POST['price'];
-                    $productData['stockQuantity'] = $_POST['stockQuantity'];
-                }
-
-                // Debug: In ra dữ liệu sản phẩm
-                error_log("Product Data: " . print_r($productData, true));
-
                 $productId = $this->productModel->create($productData);
                 if (!$productId) {
                     throw new Exception("Không thể tạo sản phẩm");
                 }
 
-                // Xử lý ảnh sản phẩm chung
+                // 2. Xử lý ảnh sản phẩm chung
                 if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
                     $uploadedImages = $this->uploadMultipleImages($_FILES['images']);
                     foreach ($uploadedImages as $imageUrl) {
@@ -104,62 +109,35 @@ class ProductController extends BaseController
                             'productId' => $productId,
                             'variantId' => null,
                             'imageUrl' => $imageUrl,
-                            'isThumbnail' => false
+                            'isThumbnail' => true
                         ]);
                     }
                 }
 
-                // 2. Xử lý biến thể nếu có
-                if ($hasVariants) {
-                    if (empty($_POST['variant_types']) || empty($_POST['variant_values'])) {
-                        throw new Exception("Thiếu thông tin biến thể");
+                // 3. Xử lý biến thể và ảnh biến thể
+                if (!isset($_POST['variant_combinations']) || empty($_POST['variant_combinations'])) {
+                    throw new Exception("Sản phẩm phải có ít nhất một biến thể");
+                }
+
+                foreach ($_POST['variant_combinations'] as $index => $combination) {
+                    // Kiểm tra dữ liệu biến thể
+                    if (empty($combination['price']) || empty($combination['quantity'])) {
+                        throw new Exception("Giá và số lượng của biến thể không được để trống");
                     }
 
-                    // Xử lý variant types và values
-                    foreach ($_POST['variant_types'] as $index => $typeName) {
-                        if (empty($typeName))
-                            continue;
+                    // Tạo biến thể
+                    $variantId = $this->variantModel->create([
+                        'productId' => $productId,
+                        'price' => $combination['price'],
+                        'quantity' => $combination['quantity']
+                    ]);
 
-                        $typeId = $this->variantTypeModel->create([
-                            'productId' => $productId,
-                            'name' => $typeName
-                        ]);
+                        // Xử lý ảnh cho biến thể
+                        if (
+                            isset($_FILES['variant_combinations']['name'][$index]['image'])
+                            && !empty($_FILES['variant_combinations']['name'][$index]['image'])
+                        ) {
 
-                        // Xử lý variant values
-                        if (!empty($_POST['variant_values'][$index])) {
-                            foreach ($_POST['variant_values'][$index] as $value) {
-                                if (empty($value))
-                                    continue;
-
-                                $variantValueId = $this->variantValueModel->createVariantValue($typeId, $value);
-                            }
-                        }
-                    }
-
-                    // Xử lý combinations
-                    if (!empty($_POST['variant_combinations'])) {
-                        foreach ($_POST['variant_combinations'] as $combination) {
-                            // Validate giá và số lượng của biến thể
-                            $price = $combination['price'] ?? null;
-                            $quantity = $combination['quantity'] ?? null;
-
-                            if (!$price || !$quantity || $price < 0 || $quantity < 0) {
-                                throw new Exception("Giá và số lượng biến thể không hợp lệ");
-                            }
-
-                            // Tạo variant
-                            $variantId = $this->variantModel->create([
-                                'productId' => $productId,
-                                'price' => $price,
-                                'quantity' => $quantity
-                            ]);
-
-                            if (!$variantId) {
-                                throw new Exception("Không thể tạo biến thể sản phẩm");
-                            }
-
-                            // Xử lý ảnh cho biến thể
-                        if (isset($_FILES['variant_combinations']['name'][$index]['image'])) {
                             $variantImage = [
                                 'name' => $_FILES['variant_combinations']['name'][$index]['image'],
                                 'type' => $_FILES['variant_combinations']['type'][$index]['image'],
@@ -169,45 +147,53 @@ class ProductController extends BaseController
                             ];
 
                             $imageUrl = $this->uploadSingleImage($variantImage);
-                            
-                            // Debug: In ra đường dẫn ảnh
-                            error_log("Uploaded image URL: " . $imageUrl);
 
-                            if ($imageUrl) {
-                                $this->productImageModel->create([
-                                    'productId' => $productId,
-                                    'variantId' => $variantId,
-                                    'imageUrl' => $imageUrl,
-                                    'isThumbnail' => false
-                                ]);
-                                }
-                            }
-
-                            $this->variantCombinationModel->createVariantCombination($variantId, $variantValueId);
-                        }
+                    if ($imageUrl) {
+                        $this->productImageModel->create([
+                            'productId' => $productId,
+                            'variantId' => $variantId,
+                            'imageUrl' => $imageUrl,
+                            'isThumbnail' => false
+                        ]);
                     }
                 }
 
-                // Xử lý ảnh và commit transaction
-                // ... (phần code xử lý ảnh giữ nguyên)
+                    // Xử lý các giá trị biến thể
+                    foreach ($combination as $type => $value) {
+                        if ($type !== 'price' && $type !== 'quantity' && $type !== 'image') {
+                            $variantTypeId = $this->variantTypeModel->findOrCreate([
+                                'productId' => $productId,
+                                'name' => $type
+                            ]);
 
-                if ($this->db->commit()) {
-                    echo json_encode([
-                        'success' => true,
-                        'message' => 'Thêm sản phẩm thành công',
-                        'data' => $_POST
-                    ]);
-                    exit;
+                        $variantValueId = $this->variantValueModel->createVariantValue(
+                            $variantTypeId,
+                            $value
+                        );
+
+                        $this->variantCombinationModel->create([
+                            'productVariantId' => $variantId,
+                            'variantValueId' => $variantValueId
+                        ]);
+                    }
                 }
+            }
+
+                $this->db->commit();
+
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Thêm sản phẩm thành công'
+                ]);
+                exit; // Đảm bảo dừng thực thi ngay lập tức
             } catch (Exception $e) {
                 $this->db->rollBack();
-                error_log("Lỗi khi tạo sản phẩm: " . $e->getMessage());
-
+                header('Content-Type: application/json');
                 http_response_code(500);
                 echo json_encode([
                     'success' => false,
-                    'error' => $e->getMessage(),
-                    'data' => $_POST
+                    'error' => $e->getMessage()
                 ]);
                 exit;
             }
@@ -240,48 +226,280 @@ class ProductController extends BaseController
 
     private function uploadSingleImage($file)
     {
-        $targetDir = __DIR__ . '/../../../public/uploads/products/';
+        try {
+            if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception("Lỗi upload file");
+            }
 
-        if (!file_exists($targetDir)) {
-            mkdir($targetDir, 0777, true);
-        }
+            // Kiểm tra kích thước file (giới hạn 5MB)
+            if ($file['size'] > 5 * 1024 * 1024) {
+                throw new Exception("File quá lớn (giới hạn 5MB)");
+            }
 
-        $fileName = uniqid() . '_' . basename($file['name']);
-        $targetPath = $targetDir . $fileName;
+            // Kiểm tra loại file
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+            if (!in_array($file['type'], $allowedTypes)) {
+                throw new Exception("Chỉ chấp nhận file ảnh (JPG, PNG, GIF)");
+            }
 
-        if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+            $targetDir = __DIR__ . '/../../../public/uploads/products/';
+            if (!file_exists($targetDir)) {
+                mkdir($targetDir, 0777, true);
+            }
+
+            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $fileName = uniqid() . '_' . time() . '.' . $extension;
+            $targetPath = $targetDir . $fileName;
+
+            if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+                throw new Exception("Không thể lưu file");
+            }
+
             return '/uploads/products/' . $fileName;
+        } catch (Exception $e) {
+            error_log("Upload error: " . $e->getMessage());
+            throw new Exception("Lỗi khi upload ảnh: " . $e->getMessage());
         }
+    }
 
-        return null;
+    private function handleImageUpload($file)
+    {
+        try {
+            // Kiểm tra file
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                return false;
+            }
+
+            // Tạo thư mục nếu chưa tồn tại
+            $uploadDir = __DIR__ . '/../../../public/uploads/products/';
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            // Tạo tên file mới
+            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $newFileName = uniqid() . '.' . $extension;
+            $targetPath = $uploadDir . $newFileName;
+
+            // Upload file
+            if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+                return '/uploads/products/' . $newFileName;
+            }
+
+            return false;
+        } catch (Exception $e) {
+            error_log("Upload error: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function edit($id)
     {
-        $product = $this->productModel->findById($id);
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Invalid request method');
+            }
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = [
-                'productName' => $_POST['productName'],
-                'category' => $_POST['category'],
-                'price' => $_POST['price'],
-                'status' => $_POST['status']
-            ];
-            $this->productModel->update($id, $data);
-            header('Location: /ecommerce-php/employee/product-management');
-            exit;
+            header('Content-Type: application/json');
+            $this->db->beginTransaction();
+            
+            // 1. Khởi tạo mảng productData trước
+            $productData = [];
+
+            // 2. Kiểm tra và thêm các trường vào mảng cập nhật
+            if (isset($_POST['productName'])) {
+                $productData['productName'] = $_POST['productName'];
+            }
+
+            if (isset($_POST['category'])) {
+                $productData['category'] = $_POST['category'];
+            }
+
+            if (isset($_POST['salePercent'])) {
+                $productData['salePercent'] = $_POST['salePercent'];
+            }
+
+            if (isset($_POST['description'])) {
+                $productData['description'] = $_POST['description'];
+            }
+
+            // 3. Kiểm tra status và thêm vào mảng productData
+            if (isset($_POST['status'])) {
+                $status = $_POST['status'];
+                $validStatuses = ['ON_SALE', 'SUSPENDED', 'OUT_OF_STOCK'];
+                
+                if (!in_array($status, $validStatuses)) {
+                    throw new Exception("Invalid status value: " . $status);
+                }
+                
+                $productData['status'] = $_POST['status'];
+            }
+
+            // 4. Cập nhật nếu có dữ liệu
+            if (!empty($productData)) {
+                $result = $this->productModel->update($id, $productData);
+                if (!$result) {
+                    throw new Exception("Không thể cập nhật thông tin sản phẩm");
+                }
+            }
+
+            // Xử lý ảnh chính của sản phẩm
+            if (isset($_FILES['mainImage']) && $_FILES['mainImage']['error'] === UPLOAD_ERR_OK) {
+                // Xóa ảnh chính cũ nếu có
+                $oldMainImage = $this->productImageModel->findMainImage($id);
+                if ($oldMainImage) {
+                    $oldPath = __DIR__ . '/../../../public' . $oldMainImage['imageUrl'];
+                    if (file_exists($oldPath)) {
+                        unlink($oldPath);
+                    }
+                    $this->productImageModel->delete($oldMainImage['id']);
+                }
+
+                // Upload ảnh mới
+                $mainImageFile = $_FILES['mainImage'];
+                $mainImageUrl = $this->uploadSingleImage($mainImageFile);
+                
+                // Lưu thông tin ảnh mới
+                $this->productImageModel->create([
+                    'productId' => $id,
+                    'variantId' => null, // Đây là ảnh chính nên variantId = null
+                    'imageUrl' => $mainImageUrl,
+                    'isThumbnail' => true
+                ]);
+            }
+
+            // 2. Cập nhật biến thể
+            if (!empty($_POST['variants'])) {
+                foreach ($_POST['variants'] as $variantId => $variantData) {
+                    // Cập nhật giá và số lượng
+                    $updateData = [];
+                    if (isset($variantData['price'])) {
+                        $updateData['price'] = floatval($variantData['price']);
+                    }
+                    if (isset($variantData['quantity'])) {
+                        $updateData['quantity'] = intval($variantData['quantity']);
+                    }
+
+                    if (!empty($updateData)) {
+                        $this->variantModel->update($variantId, $updateData);
+                    }
+
+                    // 3. Xử lý upload ảnh
+                    if (
+                        isset($_FILES['variants']['name'][$variantId]['image'])
+                        && $_FILES['variants']['error'][$variantId]['image'] === UPLOAD_ERR_OK
+                    ) {
+
+                        $file = [
+                            'name' => $_FILES['variants']['name'][$variantId]['image'],
+                            'type' => $_FILES['variants']['type'][$variantId]['image'],
+                            'tmp_name' => $_FILES['variants']['tmp_name'][$variantId]['image'],
+                            'error' => $_FILES['variants']['error'][$variantId]['image'],
+                            'size' => $_FILES['variants']['size'][$variantId]['image']
+                        ];
+
+                        // Kiểm tra và tạo thư mục nếu chưa tồn tại
+                        $uploadDir = __DIR__ . '/../../../public/uploads/products/';
+                        if (!file_exists($uploadDir)) {
+                            mkdir($uploadDir, 0777, true);
+                        }
+
+                        // Tạo tên file mới
+                        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                        $newFileName = uniqid() . '.' . $extension;
+                        $targetPath = $uploadDir . $newFileName;
+
+                        // Upload file mới
+                        if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+                            // Xóa ảnh cũ
+                            $oldImage = $this->productImageModel->findByVariantId($variantId);
+                            if ($oldImage) {
+                                $oldPath = __DIR__ . '/../../../public' . $oldImage['imageUrl'];
+                                if (file_exists($oldPath)) {
+                                    unlink($oldPath);
+                                }
+                                // Xóa record cũ trong database
+                                $this->productImageModel->delete($oldImage['id']);
+                            }
+
+                            // Thêm ảnh mới vào database
+                            $this->productImageModel->create([
+                                'productId' => $id,
+                                'variantId' => $variantId,
+                                'imageUrl' => '/uploads/products/' . $newFileName,
+                                'isThumbnail' => false
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            $this->db->commit();
+
+            die(json_encode([
+                'success' => true,
+                'message' => 'Cập nhật sản phẩm thành công'
+            ]));
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("Edit error: " . $e->getMessage());
+            http_response_code(500);
+            die(json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]));
         }
-
-        $this->view('employee/ProductManagement/edit', [
-            'title' => 'Sửa Sản phẩm',
-            'product' => $product
-        ]);
     }
 
     public function delete($id)
     {
-        $this->productModel->delete($id);
-        header('Location: /ecommerce-php/employee/product-management');
-        exit;
+        try {
+            $this->db->beginTransaction();
+
+            // 1. Xóa tất cả ảnh sản phẩm và biến thể
+            $images = $this->productImageModel->findByProductId($id);
+            foreach ($images as $image) {
+                $imagePath = __DIR__ . '/../../../public' . $image['imageUrl'];
+                if (file_exists($imagePath)) {
+                    unlink($imagePath);
+                }
+                $this->productImageModel->delete($image['id']);
+            }
+
+            // 2. Xóa tất cả variant combinations
+            $variants = $this->variantModel->findByProductId($id);
+            foreach ($variants as $variant) {
+                $this->variantCombinationModel->deleteByVariantId($variant['id']);
+            }
+
+            // 3. Xóa tất cả variant values và variant types
+            $variantTypes = $this->variantTypeModel->findByProductId($id);
+            foreach ($variantTypes as $type) {
+                $this->variantValueModel->deleteByTypeId($type['id']);
+            }
+            $this->variantTypeModel->deleteByProductId($id);
+
+            // 4. Xóa tất cả variants
+            $this->variantModel->deleteByProductId($id);
+
+            // 5. Cuối cùng xóa sản phẩm
+            $this->productModel->delete($id);
+
+            $this->db->commit();
+            echo json_encode([
+                'success' => true,
+                'message' => 'Xóa sản phẩm thành công'
+            ]);
+            exit;
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+            exit;
+        }
     }
 }

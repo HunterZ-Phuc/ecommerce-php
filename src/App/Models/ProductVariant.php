@@ -48,10 +48,28 @@ class ProductVariant extends BaseModel
 
     public function update($id, $data)
     {
-        $sql = "UPDATE {$this->table} SET variantName = :variantName, quantity = :quantity, price = :price WHERE id = :id";
-        $stmt = $this->db->prepare($sql);
-        $data['id'] = $id;
-        return $stmt->execute($data);
+        try {
+            // Tạo câu lệnh SQL động dựa trên dữ liệu cần cập nhật
+            $updateFields = [];
+            $params = [];
+            
+            foreach ($data as $key => $value) {
+                $updateFields[] = "{$key} = :{$key}";
+                $params[$key] = $value;
+            }
+            
+            if (empty($updateFields)) {
+                return true; // Không có gì để cập nhật
+            }
+            
+            $sql = "UPDATE {$this->table} SET " . implode(', ', $updateFields) . " WHERE id = :id";
+            $params['id'] = $id;
+            
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute($params);
+        } catch (\PDOException $e) {
+            throw new \Exception('Lỗi khi cập nhật biến thể: ' . $e->getMessage());
+        }
     }
 
     public function delete($id)
@@ -59,5 +77,20 @@ class ProductVariant extends BaseModel
         $sql = "DELETE FROM {$this->table} WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $id]);
+    }
+
+    public function findByProductId($productId)
+    {
+        $sql = "SELECT * FROM {$this->table} WHERE productId = :productId";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['productId' => $productId]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public function deleteByProductId($productId)
+    {
+        $sql = "DELETE FROM product_variants WHERE productId = :productId";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['productId' => $productId]);
     }
 } 

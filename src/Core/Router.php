@@ -6,7 +6,11 @@ namespace Core;
 
 class Router
 {
-    private $routes = [];
+    protected $routes = [];
+    
+    public function __construct() {
+        // Không yêu cầu tham số nữa
+    }
     
     public function add($route, $params = [])
     {
