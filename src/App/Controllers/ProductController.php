@@ -24,6 +24,8 @@ class ProductController extends BaseController
 
     public function __construct()
     {
+        parent::__construct();
+        $this->checkRole(['EMPLOYEE']);
         $this->productModel = new Product();
         $this->variantModel = new ProductVariant();
         $this->productImageModel = new ProductImage();
@@ -33,14 +35,6 @@ class ProductController extends BaseController
         $this->db = Database::getInstance()->getConnection();
     }
 
-    // public function index()
-    // {
-    //     $products = $this->productModel->findAll();
-    //     $this->view('employee/ProductManagement/index', [
-    //         'title' => 'Quản lý Sản phẩm',
-    //         'products' => $products
-    //     ]);
-    // }
     public function index()
     {
         $products = $this->productModel->findAll();
@@ -75,7 +69,44 @@ class ProductController extends BaseController
         $this->view('employee/ProductManagement/index', [
             'title' => 'Quản lý Sản phẩm',
             'products' => $products,
-        ]);
+        ], 'employee_layout');
+    }
+
+    public function productManagement()
+    {
+        $products = $this->productModel->findAll();
+
+        foreach ($products as &$product) {
+            // Lấy tất cả ảnh của sản phẩm, bao gồm cả ảnh chính
+            $product['images'] = $this->productImageModel->findByProductId($product['id']);
+
+            // Lấy các biến thể
+            $product['variants'] = $this->variantModel->findByProductId($product['id']);
+
+            foreach ($product['variants'] as &$variant) {
+                $variant['images'] = $this->productImageModel->getImagesByVariantId($variant['id']);
+
+                $stmt = $this->db->prepare("
+                    SELECT 
+                        vt.id as typeId,
+                        vt.name as typeName,
+                        vv.id as valueId,
+                        vv.value
+                    FROM variant_combinations vc
+                    JOIN variant_values vv ON vc.variantValueId = vv.id
+                    JOIN variant_types vt ON vv.variantTypeId = vt.id
+                    WHERE vc.productVariantId = :variantId
+                    ORDER BY vt.id
+                ");
+                $stmt->execute(['variantId' => $variant['id']]);
+                $variant['combinations'] = $stmt->fetchAll();
+            }
+        }
+
+        $this->view('employee/ProductManagement/index', [
+            'title' => 'Quản lý Sản phẩm',
+            'products' => $products,
+        ], 'employee_layout');
     }
 
     public function create()

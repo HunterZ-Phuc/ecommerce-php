@@ -93,4 +93,17 @@ class ProductVariant extends BaseModel
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['productId' => $productId]);
     }
+
+    public function updateStock($variantId, $newQuantity) 
+    {
+        $sql = "UPDATE product_variants 
+                SET quantity = :quantity 
+                WHERE id = :id";
+                
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'quantity' => $newQuantity,
+            'id' => $variantId
+        ]);
+    }
 }

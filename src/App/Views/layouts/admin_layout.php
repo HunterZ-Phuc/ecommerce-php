@@ -37,7 +37,7 @@
                 </div>
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/ecommerce-php/admin">
+                        <a class="nav-link text-white" href="/ecommerce-php/admin/dashboard">
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>
                     </li>

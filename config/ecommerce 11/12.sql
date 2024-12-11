@@ -19,6 +19,18 @@ SET time_zone = "+00:00";
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- 1. Các bảng độc lập (không có khóa ngoại)
+CREATE TABLE payments (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `amount` decimal(15,2) NOT NULL,
+  `paymentMethod` enum('CASH_ON_DELIVERY', 'QR_TRANSFER') NOT NULL,
+  `qrImage` varchar(255) DEFAULT NULL,
+  `refNo` varchar(255) DEFAULT NULL,
+  `paymentStatus` enum('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
+  `paymentDate` datetime DEFAULT NULL,
+  `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE otps (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -201,10 +213,12 @@ CREATE TABLE orders (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `userId` int(11) NOT NULL,
   `addressId` int(11) NOT NULL,
+  `items` text NOT NULL,
   `totalAmount` decimal(10,2) NOT NULL,
-  `paymentMethod` enum('CASH_ON_DELIVERY', 'QR_TRANSFER') NOT NULL,
-  `paymentStatus` enum('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
-  `orderStatus` enum(
+  `orderDate` datetime NOT NULL,
+  `shippingDate` datetime DEFAULT NULL,
+  `deliveryDate` datetime DEFAULT NULL,
+  `status` enum(
     'PENDING',
     'PROCESSING',
     'CONFIRMED',
@@ -215,12 +229,15 @@ CREATE TABLE orders (
     'CANCELLED',
     'RETURNED'
   ) NOT NULL DEFAULT 'PENDING',
+  `paymentId` int(11) NULL,
+  `paymentStatus` enum('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
   `note` text DEFAULT NULL,
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `updatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   FOREIGN KEY (`userId`) REFERENCES users(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`addressId`) REFERENCES addresses(`id`) ON DELETE CASCADE
+  FOREIGN KEY (`addressId`) REFERENCES address(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`paymentId`) REFERENCES payments(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE items (
@@ -236,45 +253,6 @@ CREATE TABLE items (
   FOREIGN KEY (`orderId`) REFERENCES orders(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Bảng chi tiết đơn hàng
-CREATE TABLE order_items (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    orderId INT NOT NULL,
-    variantId INT NOT NULL,
-    quantity INT NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (orderId) REFERENCES orders(id),
-    FOREIGN KEY (variantId) REFERENCES product_variants(id)
-);
-
--- Bảng lịch sử đơn hàng
-CREATE TABLE order_history (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    orderId INT NOT NULL,
-    status ENUM('PENDING', 'PROCESSING', 'SHIPPING', 'DELIVERED', 'CANCELLED') NOT NULL,
-    note TEXT,
-    createdBy INT NOT NULL,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (orderId) REFERENCES orders(id),
-    FOREIGN KEY (createdBy) REFERENCES users(id)
-);
-
-CREATE TABLE payments (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `orderId` INT NOT NULL,
-  `amount` decimal(15,2) NOT NULL,
-  `paymentMethod` enum('CASH_ON_DELIVERY', 'QR_TRANSFER') NOT NULL,
-  `qrImage` varchar(255) DEFAULT NULL,
-  `paymentStatus` enum('PENDING', 'PAID', 'FAILED') NOT NULL DEFAULT 'PENDING',
-  `note` TEXT,
-  `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-
-
 -- Tạo các indexes sau khi đã tạo xong bảng
 -- Index cho users
 ALTER TABLE users
@@ -288,7 +266,7 @@ ADD INDEX idx_product_filters (salePercent, sold);
 
 -- Index cho orders
 ALTER TABLE orders 
-ADD INDEX idx_order_search (orderStatus, createdAt),
+ADD INDEX idx_order_search (status, orderDate),
 ADD INDEX idx_order_user (userId);
 
 -- Index cho variants
@@ -327,17 +305,16 @@ CREATE TRIGGER after_order_completed
 AFTER UPDATE ON orders
 FOR EACH ROW
 BEGIN
-    IF NEW.orderStatus = 'DELIVERED' AND OLD.orderStatus != 'DELIVERED' THEN
+    IF NEW.status = 'DELIVERED' AND OLD.status != 'DELIVERED' THEN
         UPDATE product_variants pv
-        INNER JOIN order_items oi ON pv.id = oi.variantId
-        SET pv.sold = pv.sold + oi.quantity
-        WHERE oi.orderId = NEW.id;
+        INNER JOIN items i ON pv.id = i.variantId
+        SET pv.sold = pv.sold + i.quantity
+        WHERE i.orderId = NEW.id;
         
         UPDATE products p
-        INNER JOIN product_variants pv ON p.id = pv.productId
-        INNER JOIN order_items oi ON pv.id = oi.variantId
-        SET p.sold = p.sold + oi.quantity
-        WHERE oi.orderId = NEW.id;
+        INNER JOIN items i ON p.id = i.productId
+        SET p.sold = p.sold + i.quantity
+        WHERE i.orderId = NEW.id;
     END IF;
 END //
 DELIMITER ;
@@ -412,58 +389,56 @@ SELECT
     SUM(o.totalAmount) as total_revenue,
     ROUND(AVG(o.totalAmount), 2) as average_order_value
 FROM orders o
-WHERE o.orderStatus = 'DELIVERED'
+WHERE o.status = 'DELIVERED'
 GROUP BY DATE_FORMAT(o.createdAt, '%Y-%m')
 ORDER BY month_year DESC;
 
--- View báo cáo sản phẩm bán chạy
-CREATE VIEW top_selling_products AS
+-- View báo cáo sản phẩm bán chạy theo tháng
+CREATE VIEW monthly_best_selling_products AS
 SELECT 
-    p.id,
+    DATE_FORMAT(o.createdAt, '%Y-%m') as month_year,
+    p.id as product_id,
     p.productName,
     p.category,
-    COUNT(DISTINCT o.id) as total_orders,
-    SUM(oi.quantity) as total_quantity_sold,
-    SUM(oi.quantity * oi.price) as total_revenue,
-    ROUND(AVG(oi.price), 2) as average_price
-FROM products p
-JOIN product_variants pv ON p.id = pv.productId
-JOIN order_items oi ON pv.id = oi.variantId
-JOIN orders o ON oi.orderId = o.id
-WHERE o.orderStatus = 'DELIVERED'
-GROUP BY p.id, p.productName, p.category
-ORDER BY total_quantity_sold DESC;
+    SUM(i.quantity) as total_quantity_sold,
+    SUM(i.quantity * i.price) as total_revenue,
+    COUNT(DISTINCT o.id) as number_of_orders,
+    COUNT(DISTINCT o.userId) as number_of_buyers
+FROM orders o
+JOIN items i ON o.id = i.orderId
+JOIN products p ON i.productId = p.id
+WHERE o.status = 'DELIVERED'
+GROUP BY 
+    DATE_FORMAT(o.createdAt, '%Y-%m'),
+    p.id
+ORDER BY 
+    month_year DESC,
+    total_quantity_sold DESC;
 
--- View báo cáo khách hàng
-CREATE VIEW customer_report AS
+-- View báo cáo khách hàng thân thiết theo tháng
+CREATE VIEW monthly_top_customers AS
 SELECT 
-    u.id as userId,
-    u.username,
+    DATE_FORMAT(o.createdAt, '%Y-%m') as month_year,
+    u.id as user_id,
     u.fullName,
+    u.email,
+    u.phone,
     COUNT(DISTINCT o.id) as total_orders,
     SUM(o.totalAmount) as total_spent,
     ROUND(AVG(o.totalAmount), 2) as average_order_value,
     MIN(o.createdAt) as first_order_date,
     MAX(o.createdAt) as last_order_date
-FROM users u
-LEFT JOIN orders o ON u.id = o.userId AND o.orderStatus = 'DELIVERED'
-WHERE u.eRole = 'USER'
-GROUP BY u.id;
-
--- View báo cáo thanh toán
-CREATE VIEW payment_report AS
-SELECT 
-    DATE_FORMAT(o.createdAt, '%Y-%m') as month_year,
-    o.paymentMethod as payment_method,
-    o.paymentStatus as payment_status,
-    COUNT(*) as total_transactions,
-    SUM(o.totalAmount) as total_amount
 FROM orders o
+JOIN users u ON o.userId = u.id
+WHERE o.status = 'DELIVERED'
 GROUP BY 
     DATE_FORMAT(o.createdAt, '%Y-%m'),
-    o.paymentMethod,
-    o.paymentStatus
-ORDER BY month_year DESC;
+    u.id
+HAVING total_orders >= 1
+ORDER BY 
+    month_year DESC,
+    total_orders DESC,
+    total_spent DESC;
 
 DELIMITER //
 CREATE TRIGGER before_insert_cart

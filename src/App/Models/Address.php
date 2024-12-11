@@ -8,7 +8,7 @@ use Exception;
 
 class Address extends BaseModel
 {
-    protected $table = 'address';
+    protected $table = 'addresses';
 
     public function getAllByUserId($userId)
     {
@@ -198,5 +198,13 @@ class Address extends BaseModel
             error_log("Error counting user addresses: " . $e->getMessage());
             return 0;
         }
+    }
+
+    public function findByUserId($userId)
+    {
+        $sql = "SELECT * FROM {$this->table} WHERE userId = :userId";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['userId' => $userId]);
+        return $stmt->fetchAll();
     }
 }

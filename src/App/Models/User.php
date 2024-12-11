@@ -53,6 +53,10 @@ class User extends BaseModel
         try {
             // Đảm bảo các trường bắt buộc
             $requiredFields = ['username', 'fullName', 'dateOfBirth', 'sex', 'phone', 'email', 'password'];
+            
+            // Xóa role khỏi required fields và set mặc định
+            $data['eRole'] = 'USER'; // Sửa từ 'role' thành 'eRole' để khớp với tên cột trong DB
+            
             foreach ($requiredFields as $field) {
                 if (!isset($data[$field])) {
                     throw new \Exception("Missing required field: {$field}");
@@ -68,9 +72,16 @@ class User extends BaseModel
             $data['createdAt'] = date('Y-m-d H:i:s');
             $data['updatedAt'] = date('Y-m-d H:i:s');
 
+            // Hash password nếu chưa được hash
+            if (strlen($data['password']) < 60) { // Kiểm tra nếu password chưa được hash
+                $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+            }
+
             return parent::create($data);
         } catch (PDOException $e) {
             error_log("Error creating user: " . $e->getMessage());
+            // Log chi tiết lỗi để debug
+            error_log("SQL Error: " . print_r($e, true));
             throw new \Exception("Không thể tạo tài khoản. Vui lòng thử lại sau.");
         }
     }
@@ -107,7 +118,7 @@ class User extends BaseModel
     public function getAddresses($userId)
     {
         try {
-            $sql = "SELECT * FROM address WHERE userId = :userId ORDER BY isDefault DESC";
+            $sql = "SELECT * FROM addresses WHERE userId = :userId ORDER BY isDefault DESC";
             $stmt = $this->db->prepare($sql);
             $stmt->execute(['userId' => $userId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -120,7 +131,7 @@ class User extends BaseModel
     public function getDefaultAddress($userId)
     {
         try {
-            $sql = "SELECT * FROM address WHERE userId = :userId AND isDefault = true LIMIT 1";
+            $sql = "SELECT * FROM addresses WHERE userId = :userId AND isDefault = true LIMIT 1";
             $stmt = $this->db->prepare($sql);
             $stmt->execute(['userId' => $userId]);
             return $stmt->fetch(PDO::FETCH_ASSOC);

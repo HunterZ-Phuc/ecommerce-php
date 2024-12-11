@@ -17,6 +17,12 @@ class App
             // Loại bỏ tên thư mục gốc khỏi path
             $path = preg_replace('/^\/ecommerce-php/', '', $path);
 
+            // Xử lý route cho trang lỗi 403
+            if ($path === '/403') {
+                $this->show403();
+                return;
+            }
+
             // Xử lý request, tìm route phù hợp
             $params = $this->router->match($path);
 
@@ -54,6 +60,13 @@ class App
     {
         http_response_code(404);  // Set HTTP status code to 404
         require_once ROOT_PATH . "/src/App/Views/404.php";
+        exit();
+    }
+
+    protected function show403()
+    {
+        http_response_code(403);
+        require_once ROOT_PATH . "/src/App/Views/403.php";
         exit();
     }
 }

@@ -180,4 +180,136 @@ class Product extends BaseModel
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         return (int) $result['total'];
     }
+
+    public function getDashboardStats()
+    {
+        try {
+            $sql = "SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END) as out_of_stock,
+                    SUM(CASE WHEN stock > 0 AND stock <= 10 THEN 1 ELSE 0 END) as low_stock,
+                    SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active
+                    FROM {$this->table}";
+            
+            $stmt = $this->db->query($sql);
+            return $stmt->fetch(\PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception('Lỗi khi lấy thống kê sản phẩm: ' . $e->getMessage());
+        }
+    }
+
+    public function getLowStockProductsForDashboard($threshold = 10, $limit = 10)
+    {
+        try {
+            $sql = "SELECT id, productName as name, stock, price, status 
+                    FROM {$this->table}
+                    WHERE stock <= :threshold 
+                    ORDER BY stock ASC 
+                    LIMIT :limit";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':threshold', $threshold, \PDO::PARAM_INT);
+            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception('Lỗi khi lấy danh sách sản phẩm sắp hết hàng: ' . $e->getMessage());
+        }
+    }
+
+    public function getTotalProducts()
+    {
+        try {
+            $sql = "SELECT COUNT(*) FROM {$this->table}";
+            return $this->db->query($sql)->fetchColumn();
+        } catch (PDOException $e) {
+            throw new Exception('Lỗi khi đếm tổng số sản phẩm: ' . $e->getMessage());
+        }
+    }
+
+    public function getOutOfStockCount()
+    {
+        try {
+            $sql = "SELECT COUNT(*) FROM {$this->table} WHERE stock = 0";
+            return $this->db->query($sql)->fetchColumn();
+        } catch (PDOException $e) {
+            throw new Exception('Lỗi khi đếm sản phẩm hết hàng: ' . $e->getMessage());
+        }
+    }
+
+    public function getLowStockCount($threshold = 10)
+    {
+        try {
+            $sql = "SELECT COUNT(*) FROM {$this->table} WHERE stock > 0 AND stock <= :threshold";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':threshold', $threshold, \PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            throw new Exception('Lỗi khi đếm sản phẩm sắp hết hàng: ' . $e->getMessage());
+        }
+    }
+
+    public function getActiveProductCount()
+    {
+        try {
+            $sql = "SELECT COUNT(*) FROM {$this->table} WHERE status = 1";
+            return $this->db->query($sql)->fetchColumn();
+        } catch (PDOException $e) {
+            throw new Exception('Lỗi khi đếm sản phẩm đang bán: ' . $e->getMessage());
+        }
+    }
+
+    public function getDashboardTotalProducts()
+    {
+        $sql = "SELECT COUNT(*) FROM {$this->table} WHERE deleted_at IS NULL";
+        return $this->db->query($sql)->fetchColumn();
+    }
+
+    public function getDashboardOutOfStockProducts()
+    {
+        $sql = "SELECT COUNT(*) FROM product_variants WHERE quantity = 0";
+        return $this->db->query($sql)->fetchColumn();
+    }
+
+    public function getDashboardLowStockProducts($threshold = 10)
+    {
+        $sql = "SELECT COUNT(*) FROM product_variants WHERE quantity > 0 AND quantity <= :threshold";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['threshold' => $threshold]);
+        return $stmt->fetchColumn();
+    }
+
+    public function getDashboardActiveProducts()
+    {
+        $sql = "SELECT COUNT(*) FROM {$this->table} WHERE status = 'ON_SALE' AND deleted_at IS NULL";
+        return $this->db->query($sql)->fetchColumn();
+    }
+
+    public function getDashboardLowStockProductsList($threshold = 10, $limit = 10)
+    {
+        $sql = "SELECT p.*, pv.quantity as stock, pv.price
+                FROM {$this->table} p
+                JOIN product_variants pv ON p.id = pv.productId
+                WHERE p.deleted_at IS NULL 
+                AND pv.quantity <= :threshold
+                ORDER BY pv.quantity ASC
+                LIMIT :limit";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':threshold', $threshold, \PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public function getVariantsByProductId($productId)
+    {
+        $sql = "SELECT * FROM product_variants WHERE productId = :productId";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['productId' => $productId]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
 }

@@ -18,7 +18,7 @@
             <!-- Logo -->
             <a class="navbar-brand" href="/ecommerce-php">
                 <img src="/ecommerce-php/public/images/logo2.png" alt="Logo" height="40" class="d-none d-lg-inline">
-                <img src="/ecommerce-php/public/images/logo1.png" alt="Logo" height="35" class="d-lg-none">
+                <img src="/ecommerce-php/public/imag es/logo1.png" alt="Logo" height="35" class="d-lg-none">
             </a>
 
             <!-- Search Bar -->

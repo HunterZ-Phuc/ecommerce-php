@@ -41,8 +41,8 @@
                     <!-- Thêm vào phần đầu của form, sau phần tên sản phẩm -->
                     <div class="mb-3">
                         <label class="form-label">Số lượng sản phẩm muốn tạo</label>
-                        <input type="number" name="numberOfProducts" class="form-control" value="1" min="1" max="10">
-                        <small class="text-muted">Nhập số lượng sản phẩm giống hệt nhau bạn muốn tạo (tối đa 10)</small>
+                        <input type="number" name="numberOfProducts" class="form-control" value="1" min="1" max="20">
+                        <small class="text-muted">Nhập số lượng sản phẩm giống hệt nhau bạn muốn tạo (tối đa 20)</small>
                     </div>
 
                     <!-- Ẩn select danh mục và thay bằng input hidden -->

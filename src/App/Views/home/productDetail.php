@@ -74,18 +74,20 @@ error_log("View received product data: " . json_encode($product));
                 </div>
             </div>
 
-            <!-- Chọn số lượng -->
-            <div class="mb-3">
-                <label for="quantity" class="form-label">Số lượng:</label>
-                <input type="number" id="quantity" name="quantity" min="1" value="1" class="form-control w-25">
-            </div>
-
             <!-- Mua ngay -->
             <button class="btn btn-primary me-2">Mua ngay</button>
-            <!-- Nút thêm vào giỏ hàng -->
-            <button id="addToCartBtn" class="btn btn-primary" disabled>
-                Thêm vào giỏ hàng
-            </button>
+            
+            <!-- Form thêm vào giỏ hàng -->
+            <form id="addToCartForm" class="mt-3" action="/ecommerce-php/cart/add" method="POST">
+                <input type="hidden" name="variantId" id="selectedVariantId">
+                <div class="mb-3">
+                    <label for="quantity" class="form-label">Số lượng:</label>
+                    <input type="number" id="quantity" name="quantity" value="1" min="1" class="form-control">
+                </div>
+                <button type="submit" id="addToCartBtn" class="btn btn-primary me-2" disabled>
+                    Thêm vào giỏ hàng
+                </button>
+            </form>
         </div>
     </div>
     <p class="text-muted mt-4"><?= $product['description'] ?></p>
@@ -98,6 +100,8 @@ error_log("View received product data: " . json_encode($product));
     const quantityElement = document.getElementById('variantQuantity');
     const addToCartBtn = document.getElementById('addToCartBtn');
     const mainImage = document.getElementById('mainImage');
+    const quantityInput = document.getElementById('quantity');
+    const selectedVariantIdInput = document.getElementById('selectedVariantId');
 
     let selectedOptions = {};
 
@@ -110,50 +114,70 @@ error_log("View received product data: " . json_encode($product));
             selectedOptions[type] = value;
 
             // Làm nổi bật nút được chọn
-            document.querySelectorAll(`[data-type="${type}"]`).forEach(btn => btn.classList.remove('btn-secondary'));
+            document.querySelectorAll(`[data-type="${type}"]`).forEach(btn => {
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-outline-secondary');
+            });
+            this.classList.remove('btn-outline-secondary');
             this.classList.add('btn-secondary');
 
             // Tìm biến thể phù hợp
-            const matchedVariant = variants.find(variant => {
-                return variant.combinations.every(combination => {
-                    return selectedOptions[combination.typeName] === combination.value;
-                });
-            });
+            const matchedVariant = findMatchingVariant();
 
             if (matchedVariant) {
                 // Cập nhật giá và số lượng
-                priceElement.textContent = `Giá: ${matchedVariant.price} VND`;
-                quantityElement.textContent = `Số lượng còn lại: ${matchedVariant.quantity}`;
+                priceElement.textContent = new Intl.NumberFormat('vi-VN', {
+                    style: 'currency',
+                    currency: 'VND'
+                }).format(matchedVariant.price);
+                
+                // Cập nhật số lượng tối đa có thể mua
+                quantityInput.max = matchedVariant.quantity;
+                if (parseInt(quantityInput.value) > matchedVariant.quantity) {
+                    quantityInput.value = matchedVariant.quantity;
+                }
+
+                // Cập nhật variant ID cho form
+                selectedVariantIdInput.value = matchedVariant.id;
+                
+                // Kích hoạt nút thêm vào giỏ hàng
                 addToCartBtn.disabled = false;
 
-                // Cập nhật ảnh chính dựa trên `variantId`
-                const variantImage = images.find(image => image.variantId == matchedVariant.id);
-                if (variantImage) {
-                    mainImage.src = '/ecommerce-php/public' + variantImage.imageUrl;
+                // Cập nhật ảnh nếu có
+                if (matchedVariant.images && matchedVariant.images.length > 0) {
+                    mainImage.src = matchedVariant.images[0];
                 }
             } else {
-                priceElement.textContent = 'Giá: Không có biến thể phù hợp';
-                quantityElement.textContent = 'Số lượng còn lại: Không có biến thể phù hợp';
                 addToCartBtn.disabled = true;
-
-                // Trả về ảnh mặc định nếu không có biến thể phù hợp
-                mainImage.src = '/ecommerce-php/public' + <?= json_encode($product['mainImage']) ?>;
+                selectedVariantIdInput.value = '';
             }
         });
     });
 
-    // Hiển thị mặc định giá, số lượng và ảnh của biến thể đầu tiên
-    if (variants.length > 0) {
-        const defaultVariant = variants[0];
-        priceElement.textContent = `Giá: ${defaultVariant.price} VND`;
-        quantityElement.textContent = `Số lượng còn lại: ${defaultVariant.quantity}`;
-        addToCartBtn.disabled = false;
-
-        const defaultImage = images.find(image => image.variantId == defaultVariant.id);
-        if (defaultImage) {
-            mainImage.src = '/ecommerce-php/public' + defaultImage.imageUrl;
+    function findMatchingVariant() {
+        // Kiểm tra xem đã chọn đủ các loại biến thể chưa
+        const variantTypes = new Set(variants.flatMap(v => 
+            v.combinations.map(c => c.typeName)
+        ));
+        
+        if (Object.keys(selectedOptions).length !== variantTypes.size) {
+            return null;
         }
+
+        return variants.find(variant => {
+            return variant.combinations.every(combination => 
+                selectedOptions[combination.typeName] === combination.value
+            );
+        });
     }
+
+    // Xử lý form submit
+    document.getElementById('addToCartForm').addEventListener('submit', function(e) {
+        if (!selectedVariantIdInput.value) {
+            e.preventDefault();
+            alert('Vui lòng chọn đầy đủ các tùy chọn sản phẩm');
+        }
+    });
 </script>
 
 

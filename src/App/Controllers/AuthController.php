@@ -3,95 +3,141 @@
 namespace App\Controllers;
 
 use App\Models\User;
+use App\Models\Admin;
+use App\Models\Employee;
 use Exception;
 
 class AuthController extends BaseController
 {
     private $userModel;
+    private $adminModel;
+    private $employeeModel;
 
     public function __construct()
     {
         parent::__construct();
         $this->userModel = new User();
+        $this->adminModel = new Admin();
+        $this->employeeModel = new Employee();
     }
 
+    // Login cho user thường
     public function login()
     {
-        // Kiểm tra xem đã có session nào đang hoạt động không
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        // Nếu đã đăng nhập thì chuyển hướng về trang tương ứng
         if ($this->auth->isLoggedIn()) {
-            $userRole = $this->auth->getUserRole();
-            if ($userRole === 'ADMIN') {
-                header('Location: /ecommerce-php/admin');
-            } else {
-                header('Location: /ecommerce-php/');
-            }
-            exit();
+            $this->redirect('');
+            return;
         }
 
-        // Xử lý đăng nhập
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = $_POST['username'] ?? '';
-            $password = $_POST['password'] ?? '';
-            $remember = isset($_POST['remember']);
-
             try {
-                // Tìm user theo username
+                $username = $_POST['username'] ?? '';
+                $password = $_POST['password'] ?? '';
+
                 $user = $this->userModel->findByUsername($username);
 
-                if (!$user) {
-                    throw new Exception('Tên đăng nhập hoặc mật khẩu không đúng');
+                if (!$user || !password_verify($password, $user['password'])) {
+                    throw new Exception('Thông tin đăng nhập không đúng');
                 }
 
-                // Kiểm tra mật khẩu
-                if (!password_verify($password, $user['password'])) {
-                    throw new Exception('Tên đăng nhập hoặc mật khẩu không đúng');
+                if ($user['eRole'] !== 'USER') {
+                    throw new Exception('Tài khoản không hợp lệ');
                 }
 
-                // Hủy session cũ nếu có
-                if (session_status() === PHP_SESSION_ACTIVE) {
-                    session_destroy();
-                    session_start();
-                }
-
-                // Đăng nhập với role mới
-                $avatar = $user['avatar'] ?? null;
-                $role = $user['role'] ?? 'USER'; // Mặc định là USER nếu không có role
-                $this->auth->login($user['id'], $user['username'], $avatar, $role);
-
-                // Chuyển hướng dựa vào role
-                if ($role === 'ADMIN') {
-                    header('Location: /ecommerce-php/admin');
-                } else {
-                    header('Location: /ecommerce-php/');
-                }
-                exit();
+                $this->auth->login($user['id'], $user['username'], $user['avatar'], 'USER');
+                $this->redirect('');
 
             } catch (Exception $e) {
-                $this->view('login', [
-                    'error' => $e->getMessage()
-                ]);
+                $this->view('login', ['error' => $e->getMessage()]);
                 return;
             }
         }
 
-        // Hiển thị form đăng nhập
         $this->view('login');
     }
 
-    public function register()
+    // Login cho admin
+    public function adminLogin()
     {
-        // Nếu đã đăng nhập thì chuyển hướng về trang chủ
         if ($this->auth->isLoggedIn()) {
-            header('Location: /ecommerce-php/');
-            exit();
+            $this->redirect('admin');
+            return;
         }
 
-        // Xử lý đăng ký
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $username = $_POST['username'] ?? '';
+                $password = $_POST['password'] ?? '';
+
+                $admin = $this->adminModel->findByUsername($username);
+                
+                if (!$admin) {
+                    throw new Exception('Thông tin đăng nhập không đúng');
+                }
+
+                if (!password_verify($password, $admin['password'])) {
+                    throw new Exception('Thông tin đăng nhập không đúng');
+                }
+
+                if ($admin['eRole'] !== 'ADMIN') {
+                    throw new Exception('Bạn không có quyền truy cập');
+                }
+
+                $this->auth->login($admin['id'], $admin['username'], null, 'ADMIN');
+                $this->redirect('admin');
+
+            } catch (Exception $e) {
+                $this->view('admin/login', ['error' => $e->getMessage()], 'default_layout');
+                return;
+            }
+        }
+
+        $this->view('admin/login', [], 'default_layout');
+    }
+
+    // Login cho employee  
+    public function employeeLogin()
+    {
+        if ($this->auth->isLoggedIn()) {
+            $this->redirect('employee');
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $username = $_POST['username'] ?? '';
+                $password = $_POST['password'] ?? '';
+
+                $employee = $this->employeeModel->findByUsername($username);
+
+                if (!$employee || !password_verify($password, $employee['password'])) {
+                    throw new Exception('Thông tin đăng nhập không đúng');
+                }
+
+                if ($employee['eRole'] !== 'EMPLOYEE') {
+                    throw new Exception('Bạn không có quyền truy cập');
+                }
+
+                $this->auth->login($employee['id'], $employee['username'], $employee['avatar'], 'EMPLOYEE');
+                $this->redirect('employee');
+
+            } catch (Exception $e) {
+                $this->view('employee/login', ['error' => $e->getMessage()], 'default_layout');
+                return;
+            }
+        }
+
+        $this->view('employee/login', [], 'default_layout');
+    }
+
+    // Đăng ký chỉ dành cho user thường
+    public function register()
+    {
+        if ($this->auth->isLoggedIn()) {
+            $this->redirect('');
+            return;
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $data = [
@@ -103,10 +149,9 @@ class AuthController extends BaseController
                     'sex' => $_POST['sex'] ?? '',
                     'password' => $_POST['password'] ?? '',
                     'confirmPassword' => $_POST['confirmPassword'] ?? '',
-                    'role' => 'USER' // Mặc định role là USER khi đăng ký
+                    'eRole' => 'USER'
                 ];
 
-                // Validate dữ liệu
                 $this->validateRegistrationData($data);
 
                 // Kiểm tra username đã tồn tại
@@ -124,7 +169,7 @@ class AuthController extends BaseController
                     throw new Exception('Số điện thoại đã được sử dụng');
                 }
 
-                // Hash password
+                // Hash password và tạo user
                 $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
 
                 // Bỏ confirmPassword
@@ -132,14 +177,8 @@ class AuthController extends BaseController
 
                 // Tạo tài khoản
                 $userId = $this->userModel->create($data);
-
-                // Đăng nhập luôn sau khi đăng ký thành công
-                $avatar = null; // Mặc định avatar là null cho user mới
-                $this->auth->login($userId, $data['username'], $avatar, 'USER');
-
-                // Chuyển hướng về trang chủ
-                header('Location: /ecommerce-php/');
-                exit();
+                $this->auth->login($userId, $data['username'], null, 'USER');
+                $this->redirect('');
 
             } catch (Exception $e) {
                 // Hiển thị form với thông báo lỗi và giữ lại dữ liệu cũ
@@ -155,23 +194,25 @@ class AuthController extends BaseController
         $this->view('register');
     }
 
+    // Logout chung cho tất cả role
     public function logout()
     {
-        // Hủy toàn bộ session
+        $userRole = $this->auth->getUserRole();
         $this->auth->logout();
 
-        // Đảm bảo session được hủy hoàn toàn
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_destroy();
+        switch ($userRole) {
+            case 'ADMIN':
+                $this->redirect('');
+                break;
+            case 'EMPLOYEE':
+                $this->redirect('');
+                break;
+            default:
+                $this->redirect('');
         }
-
-        // Khởi tạo session mới
-        session_start();
-
-        header('Location: /ecommerce-php/login');
-        exit();
     }
 
+    // Validation helper
     private function validateRegistrationData($data)
     {
         // Validate các trường bắt buộc

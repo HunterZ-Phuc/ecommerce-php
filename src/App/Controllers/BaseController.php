@@ -52,7 +52,7 @@ abstract class BaseController
                 $defaultLayout = 'layouts/user_layout.php';
             } else {
                 // Nếu không có prefix nào, sử dụng layout mặc định
-                $defaultLayout = 'layouts/default_layout.php';
+              $defaultLayout = 'layouts/default_layout.php';
             }
             // Load layout mặc định
             require_once ROOT_PATH . "/src/App/Views/" . $defaultLayout;
@@ -90,5 +90,29 @@ abstract class BaseController
     {
         header("Location: /ecommerce-php/" . $path);
         exit;
+    }
+
+    protected function checkRole($allowedRoles)
+    {
+        if (!$this->auth->isLoggedIn()) {
+            $role = $allowedRoles[0] ?? '';
+            switch($role) {
+                case 'ADMIN':
+                    $this->redirect('admin-login');
+                    break;
+                case 'EMPLOYEE':
+                    $this->redirect('employee-login');
+                    break;
+                default:
+                    $this->redirect('login');
+            }
+            return;
+        }
+
+        $userRole = $this->auth->getUserRole();
+        if (!in_array($userRole, $allowedRoles)) {
+            $this->redirect('403');
+            exit;
+        }
     }
 }
