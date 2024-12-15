@@ -98,10 +98,6 @@
                         <span>Tạm tính:</span>
                         <span><?= number_format($cartTotal) ?>đ</span>
                     </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Phí vận chuyển:</span>
-                        <span>0đ</span>
-                    </div>
                     <div class="d-flex justify-content-between">
                         <strong>Tổng cộng:</strong>
                         <strong><?= number_format($cartTotal) ?>đ</strong>

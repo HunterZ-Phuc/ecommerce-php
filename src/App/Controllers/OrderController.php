@@ -24,6 +24,7 @@ class OrderController extends BaseController
         $this->orderModel = new Order();
         $this->cartModel = new Cart();
         $this->addressModel = new Address();
+        $this->db = Database::getInstance()->getConnection();
     }
 
     public function checkout()
@@ -71,7 +72,7 @@ class OrderController extends BaseController
             }
 
             // 6. Tính tổng tiền các sản phẩm được chọn
-            $cartTotal = array_reduce($cartItems, function($total, $item) {
+            $cartTotal = array_reduce($cartItems, function ($total, $item) {
                 return $total + ($item['finalPrice'] * $item['quantity']);
             }, 0);
 
@@ -98,6 +99,10 @@ class OrderController extends BaseController
             $this->db->beginTransaction();
 
             $userId = $this->auth->getUserId();
+            if (!$userId) {
+                throw new Exception('Bạn cần đăng nhập để tạo đơn hàng');
+            }
+
             $addressId = $_POST['addressId'] ?? null;
             $paymentMethod = $_POST['paymentMethod'] ?? null;
             $note = $_POST['note'] ?? '';
@@ -140,6 +145,9 @@ class OrderController extends BaseController
 
             // Lưu đơn hàng
             $orderId = $this->orderModel->createOrder($orderData);
+            if (!$orderId) {
+                throw new Exception('Không thể tạo đơn hàng');
+            }
 
             // Cập nhật số lượng tồn kho
             foreach ($cartItems as $item) {
