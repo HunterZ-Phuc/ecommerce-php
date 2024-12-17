@@ -167,4 +167,49 @@ class CartController extends BaseController
             ], 400);
         }
     }
+
+    public function processSelectedItems()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Invalid request method');
+            }
+
+            $userId = $this->auth->getUserId();
+            $selectedVariantIds = $_POST['variantIds'] ?? [];
+
+            error_log('Selected Variant IDs: ' . print_r($selectedVariantIds, true));
+
+            if (empty($selectedVariantIds)) {
+                throw new Exception('Vui lòng chọn sản phẩm');
+            }
+
+            // Lấy thông tin sản phẩm đã chọn
+            $cartItems = $this->cartModel->getSelectedCartItems($userId, $selectedVariantIds);
+            
+            error_log('Cart Items: ' . print_r($cartItems, true));
+
+            if (empty($cartItems)) {
+                throw new Exception('Không tìm thấy sản phẩm đã chọn');
+            }
+
+            // Lưu vào session
+            $_SESSION['selected_items'] = $cartItems;
+            $_SESSION['selected_variant_ids'] = $selectedVariantIds;
+
+            error_log('Session after save: ' . print_r($_SESSION, true));
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Đã chọn sản phẩm thành công'
+            ]);
+
+        } catch (Exception $e) {
+            error_log('Process Selected Items Error: ' . $e->getMessage());
+            $this->jsonResponse([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
 } 

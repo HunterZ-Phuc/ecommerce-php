@@ -1,5 +1,3 @@
-<?php require_once __DIR__ . '/../layouts/header.php'; ?>
-
 <div class="container my-5">
     <div class="row">
         <div class="col-md-12">
@@ -51,7 +49,7 @@
                                                        class="btn btn-sm btn-outline-primary">
                                                         Chi tiết
                                                     </a>
-                                                    <?php if ($order['paymentMethod'] === 'BANKING' && 
+                                                    <?php if ($order['paymentMethod'] === 'QR_TRANSFER' && 
                                                               $order['paymentStatus'] === 'PENDING'): ?>
                                                         <a href="/ecommerce-php/order/payment/<?= $order['id'] ?>" 
                                                            class="btn btn-sm btn-primary">
@@ -104,5 +102,3 @@
         </div>
     </div>
 </div>
-
-<?php require_once __DIR__ . '/../layouts/footer.php'; ?> 

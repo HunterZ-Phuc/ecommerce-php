@@ -24,158 +24,221 @@ class OrderController extends BaseController
         $this->orderModel = new Order();
         $this->cartModel = new Cart();
         $this->addressModel = new Address();
+        $this->variantModel = new ProductVariant();
         $this->db = Database::getInstance()->getConnection();
     }
 
     public function checkout()
-    {
-        try {
-            // 1. Kiểm tra user đã đăng nhập
-            $userId = $this->auth->getUserId();
-            if (!$userId) {
-                $_SESSION['error'] = 'Vui lòng đăng nhập để tiếp tục';
-                $this->redirect('login');
-                return;
-            }
-
-            // 2. Lấy danh sách variantId được chọn
-            $selectedVariantIds = $_POST['selectedItems'] ?? [];
-            if (empty($selectedVariantIds)) {
-                $_SESSION['error'] = 'Vui lòng chọn sản phẩm để mua';
-                $this->redirect('cart');
-                return;
-            }
-
-            // 3. Lấy thông tin giỏ hàng cho các sản phẩm được chọn
-            $cartItems = $this->cartModel->getSelectedCartItems($userId, $selectedVariantIds);
-            if (empty($cartItems)) {
-                $_SESSION['error'] = 'Không tìm thấy sản phẩm đã chọn';
-                $this->redirect('cart');
-                return;
-            }
-
-            // 4. Kiểm tra số lượng tồn kho
-            foreach ($cartItems as $item) {
-                if ($item['quantity'] > $item['stockQuantity']) {
-                    $_SESSION['error'] = "Sản phẩm {$item['productName']} chỉ còn {$item['stockQuantity']} trong kho";
-                    $this->redirect('cart');
-                    return;
-                }
-            }
-
-            // 5. Lấy địa chỉ của user
-            $addresses = $this->addressModel->findByUserId($userId);
-            if (empty($addresses)) {
-                $_SESSION['no_address'] = true;
-                $this->redirect('cart');
-                return;
-            }
-
-            // 6. Tính tổng tiền các sản phẩm được chọn
-            $cartTotal = array_reduce($cartItems, function ($total, $item) {
-                return $total + ($item['finalPrice'] * $item['quantity']);
-            }, 0);
-
-            // 7. Render view với dữ liệu
-            $this->view('order/checkout', [
-                'title' => 'Thanh toán đơn hàng',
-                'cartItems' => $cartItems,
-                'addresses' => $addresses,
-                'cartTotal' => $cartTotal,
-                'selectedVariantIds' => $selectedVariantIds
-            ]);
-
-        } catch (Exception $e) {
-            error_log('Checkout Error: ' . $e->getMessage());
-            $_SESSION['error'] = 'Có lỗi xảy ra: ' . $e->getMessage();
-            $this->redirect('cart');
+{
+    try {
+        error_log('=== START CHECKOUT ===');
+        
+        // 1. Kiểm tra user đã đăng nhập
+        $userId = $this->auth->getUserId();
+        if (!$userId) {
+            $_SESSION['error'] = 'Vui lòng đăng nhập để tiếp tục';
+            $this->redirect('login');
+            return;
         }
+
+        // 2. Lấy danh sách variantId được chọn từ POST request
+        $selectedVariantIds = isset($_POST['selectedItems']) ? $_POST['selectedItems'] : [];
+        error_log('Selected Variant IDs from POST: ' . print_r($selectedVariantIds, true));
+
+        if (empty($selectedVariantIds)) {
+            $_SESSION['error'] = 'Vui lòng chọn sản phẩm để mua';
+            $this->redirect('cart');
+            return;
+        }
+
+        // 3. Lấy thông tin giỏ hàng cho các sản phẩm được chọn
+        $cartItems = $this->cartModel->getSelectedCartItems($userId, $selectedVariantIds);
+        error_log('Cart Items: ' . print_r($cartItems, true));
+
+        if (empty($cartItems)) {
+            $_SESSION['error'] = 'Không tìm thấy sản phẩm đã chọn';
+            $this->redirect('cart');
+            return;
+        }
+
+        // 4. Kiểm tra số lượng tồn kho
+        foreach ($cartItems as $item) {
+            if ($item['quantity'] > $item['stockQuantity']) {
+                $_SESSION['error'] = "Sản phẩm {$item['productName']} chỉ còn {$item['stockQuantity']} trong kho";
+                $this->redirect('cart');
+                return;
+            }
+        }
+
+        // 5. Lấy địa chỉ của user
+        $addresses = $this->addressModel->findByUserId($userId);
+        if (empty($addresses)) {
+            $_SESSION['error'] = 'Vui lòng th��m địa chỉ giao hàng';
+            $this->redirect('address/create');
+            return;
+        }
+
+        // 6. Tính tổng tiền
+        $cartTotal = array_reduce($cartItems, function ($total, $item) {
+            return $total + ($item['finalPrice'] * $item['quantity']);
+        }, 0);
+
+        // 7. Lưu thông tin vào session để sử dụng ở bước tạo đơn hàng
+        $_SESSION['selected_items'] = $cartItems;
+        $_SESSION['selected_variant_ids'] = $selectedVariantIds;
+
+        error_log('Session after save: ' . print_r($_SESSION, true));
+
+        // 8. Render view checkout
+        $this->view('order/checkout', [
+            'title' => 'Thanh toán đơn hàng',
+            'cartItems' => $cartItems,
+            'addresses' => $addresses,
+            'cartTotal' => $cartTotal,
+            'selectedVariantIds' => $selectedVariantIds
+        ]);
+
+    } catch (Exception $e) {
+        error_log('Checkout Error: ' . $e->getMessage());
+        $_SESSION['error'] = $e->getMessage();
+        $this->redirect('cart');
     }
+}
 
     public function create()
     {
         try {
-            // Bắt đầu transaction
-            $this->db->beginTransaction();
+            error_log('=== START CREATE ORDER ===');
+            error_log('POST Data: ' . print_r($_POST, true));
+            error_log('Session Data: ' . print_r($_SESSION, true));
+
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Invalid request method');
+            }
 
             $userId = $this->auth->getUserId();
             if (!$userId) {
-                throw new Exception('Bạn cần đăng nhập để tạo đơn hàng');
+                throw new Exception('Vui lòng đăng nhập để tiếp tục');
             }
 
-            $addressId = $_POST['addressId'] ?? null;
-            $paymentMethod = $_POST['paymentMethod'] ?? null;
-            $note = $_POST['note'] ?? '';
+            // Lấy dữ liệu từ form và session
+            $addressId = filter_input(INPUT_POST, 'addressId', FILTER_VALIDATE_INT);
+            $paymentMethod = filter_input(INPUT_POST, 'paymentMethod', FILTER_SANITIZE_STRING);
+            $cartItems = $_SESSION['selected_items'] ?? [];
+            $selectedVariantIds = $_SESSION['selected_variant_ids'] ?? [];
 
-            // Validate input
-            if (!$addressId || !$paymentMethod) {
-                throw new Exception('Vui lòng điền đầy đủ thông tin');
+            error_log('Address ID: ' . $addressId);
+            error_log('Payment Method: ' . $paymentMethod);
+            error_log('Cart Items: ' . print_r($cartItems, true));
+            error_log('Selected Variant IDs: ' . print_r($selectedVariantIds, true));
+
+            // Validate dữ liệu
+            if (!$addressId) {
+                throw new Exception('Vui lòng chọn địa chỉ giao hàng');
             }
-
-            // Lấy và kiểm tra giỏ hàng
-            $cartItems = $this->cartModel->getCartItems($userId);
+            if (!$paymentMethod) {
+                throw new Exception('Vui lòng chọn phương thức thanh toán');
+            }
             if (empty($cartItems)) {
-                throw new Exception('Giỏ hàng trống');
+                throw new Exception('Không có sản phẩm nào được chọn');
             }
 
-            // Kiểm tra lại số lượng tồn kho
-            foreach ($cartItems as $item) {
-                if ($item['quantity'] > $item['stockQuantity']) {
-                    throw new Exception("Sản phẩm {$item['productName']} chỉ còn {$item['stockQuantity']} trong kho");
+            // Tính tổng tiền
+            $totalAmount = array_reduce($cartItems, function ($total, $item) {
+                return $total + ($item['finalPrice'] * $item['quantity']);
+            }, 0);
+
+            $this->db->beginTransaction();
+
+            try {
+                // 1. Tạo đơn hàng
+                $orderData = [
+                    'userId' => $userId,
+                    'addressId' => $addressId,
+                    'totalAmount' => $totalAmount,
+                    'paymentMethod' => $paymentMethod,
+                    'orderStatus' => 'PENDING',
+                    'paymentStatus' => 'PENDING'
+                ];
+                
+                $orderId = $this->orderModel->create($orderData);
+                if (!$orderId) {
+                    throw new Exception('Không thể tạo đơn hàng');
                 }
-            }
 
-            // Tạo đơn hàng
-            $orderData = [
-                'userId' => $userId,
-                'addressId' => $addressId,
-                'totalAmount' => array_sum(array_map(function ($item) {
-                    return $item['finalPrice'] * $item['quantity'];
-                }, $cartItems)),
-                'paymentMethod' => $paymentMethod,
-                'note' => $note,
-                'items' => array_map(function ($item) {
-                    return [
+                // 2. Tạo chi tiết đơn hàng
+                foreach ($cartItems as $item) {
+                    $orderItemData = [
+                        'orderId' => $orderId,
                         'variantId' => $item['variantId'],
                         'quantity' => $item['quantity'],
                         'price' => $item['finalPrice']
                     ];
-                }, $cartItems)
-            ];
+                    
+                    if (!$this->orderModel->createOrderItem($orderItemData)) {
+                        throw new Exception('Không thể tạo chi tiết đơn hàng');
+                    }
+                }
 
-            // Lưu đơn hàng
-            $orderId = $this->orderModel->createOrder($orderData);
-            if (!$orderId) {
-                throw new Exception('Không thể tạo đơn hàng');
-            }
+                // 3. Tạo bản ghi thanh toán
+                $paymentData = [
+                    'orderId' => $orderId,
+                    'amount' => $totalAmount,
+                    'paymentMethod' => $paymentMethod,
+                    'paymentStatus' => 'PENDING'
+                ];
+                
+                if (!$this->orderModel->createPayment($paymentData)) {
+                    throw new Exception('Không thể tạo bản ghi thanh toán');
+                }
 
-            // Cập nhật số lượng tồn kho
-            foreach ($cartItems as $item) {
-                $this->variantModel->updateStock(
-                    $item['variantId'],
-                    $item['stockQuantity'] - $item['quantity']
-                );
-            }
+                // 4. Tạo lịch sử đơn hàng
+                $orderHistoryData = [
+                    'orderId' => $orderId,
+                    'status' => 'PENDING',
+                    'note' => 'Đơn hàng mới được tạo',
+                    'createdBy' => $userId
+                ];
+                
+                if (!$this->orderModel->createOrderHistory($orderHistoryData)) {
+                    throw new Exception('Không thể tạo lịch sử đơn hàng');
+                }
 
-            // Xóa giỏ hàng
-            $this->cartModel->clearCart($userId);
+                // 5. Cập nhật số lượng tồn kho và xóa giỏ hàng
+                foreach ($cartItems as $item) {
+                    // Cập nhật số lượng tồn kho
+                    $newQuantity = $item['stockQuantity'] - $item['quantity'];
+                    if (!$this->variantModel->updateStock($item['variantId'], $newQuantity)) {
+                        throw new Exception('Không thể cập nhật số lượng tồn kho');
+                    }
+                    // Xóa khỏi giỏ hàng
+                    $this->cartModel->removeFromCart($userId, $item['variantId']);
+                }
 
-            // Commit transaction
-            $this->db->commit();
+                // 6. Xóa session
+                unset($_SESSION['selected_items']);
+                unset($_SESSION['selected_variant_ids']);
 
-            // Redirect theo phương thức thanh toán
-            if ($paymentMethod === 'BANKING') {
-                $this->redirect("payment/banking/{$orderId}");
-            } else {
-                $this->redirect("order/success/{$orderId}");
+                $this->db->commit();
+                error_log('Transaction committed successfully');
+
+                // 7. Chuyển hướng
+                if ($paymentMethod === 'QR_TRANSFER') {
+                    $this->redirect("order/payment/{$orderId}");
+                } else {
+                    $this->redirect("order/success/{$orderId}");
+                }
+
+            } catch (Exception $e) {
+                $this->db->rollBack();
+                error_log('Transaction Error: ' . $e->getMessage());
+                throw $e;
             }
 
         } catch (Exception $e) {
-            // Rollback nếu có lỗi
-            $this->db->rollBack();
-
+            error_log('Order Creation Error: ' . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
-            $this->redirect('checkout');
+            $this->redirect('cart');
         }
     }
 
@@ -235,20 +298,29 @@ class OrderController extends BaseController
         }
     }
 
-    public function success($orderId)
+    public function success($id = null)
     {
-        $userId = $this->auth->getUserId();
-        $order = $this->orderModel->getOrderDetails($orderId);
+        try {
+            if (!$id) {
+                throw new Exception('Không tìm thấy đơn hàng');
+            }
 
-        if (!$order || $order['userId'] !== $userId) {
-            $this->redirect('404');
-            return;
+            $userId = $this->auth->getUserId();
+            $order = $this->orderModel->getOrderDetails($id);
+
+            if (!$order || $order['userId'] !== $userId) {
+                throw new Exception('Không tìm thấy đơn hàng');
+            }
+
+            $this->view('order/success', [
+                'title' => 'Đặt hàng thành công',
+                'order' => $order
+            ]);
+
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect('order/history');
         }
-
-        $this->view('order/success', [
-            'title' => 'Đặt hàng thành công',
-            'order' => $order
-        ]);
     }
 
     public function history()

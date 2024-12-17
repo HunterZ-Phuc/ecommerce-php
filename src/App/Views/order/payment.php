@@ -1,5 +1,3 @@
-<?php require_once __DIR__ . '/../layouts/header.php'; ?>
-
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -81,5 +79,3 @@
         </div>
     </div>
 </div>
-
-<?php require_once __DIR__ . '/../layouts/footer.php'; ?> 

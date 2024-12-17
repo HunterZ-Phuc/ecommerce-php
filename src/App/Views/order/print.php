@@ -61,7 +61,7 @@
         <h3>Thông tin đơn hàng</h3>
         <p>
             <strong>Phương thức thanh toán:</strong> 
-            <?= $order['paymentMethod'] === 'COD' ? 'Tiền mặt khi nhận hàng' : 'Chuyển khoản ngân hàng' ?>
+            <?= $order['paymentMethod'] === 'CASH_ON_DELIVERY' ? 'Tiền mặt khi nhận hàng' : 'Chuyển khoản ngân hàng' ?>
         </p>
         <p>
             <strong>Trạng thái thanh toán:</strong>

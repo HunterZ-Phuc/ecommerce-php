@@ -1,5 +1,3 @@
-<?php require_once __DIR__ . '/../layouts/header.php'; ?>
-
 <div class="container my-5">
     <div class="row">
         <div class="col-md-8">
@@ -154,5 +152,3 @@
     background: #007bff;
 }
 </style>
-
-<?php require_once __DIR__ . '/../layouts/footer.php'; ?> 

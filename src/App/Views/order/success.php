@@ -1,5 +1,3 @@
-<?php require_once __DIR__ . '/../layouts/header.php'; ?>
-
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -13,7 +11,7 @@
                         Cảm ơn bạn đã đặt hàng. Mã đơn hàng của bạn là: <strong>#<?= $order['id'] ?></strong>
                     </p>
 
-                    <?php if ($order['paymentMethod'] === 'COD'): ?>
+                    <?php if ($order['paymentMethod'] === 'CASH_ON_DELIVERY'): ?>
                         <div class="alert alert-info">
                             Bạn sẽ thanh toán <strong><?= number_format($order['totalAmount']) ?>đ</strong> 
                             khi nhận hàng
@@ -49,5 +47,3 @@
         </div>
     </div>
 </div>
-
-<?php require_once __DIR__ . '/../layouts/footer.php'; ?> 

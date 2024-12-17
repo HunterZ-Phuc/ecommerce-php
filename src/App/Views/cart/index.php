@@ -414,6 +414,14 @@ $pageTitle = $title ?? 'Giỏ hàng';
 
     // Khởi tạo tổng ban đầu
     updateSelectedTotals();
+
+    document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+        const selectedItems = document.querySelectorAll('input[name="selectedItems[]"]:checked');
+        if (selectedItems.length === 0) {
+            e.preventDefault();
+            alert('Vui lòng chọn ít nhất một sản phẩm');
+        }
+    });
 </script>
 
 <style>
