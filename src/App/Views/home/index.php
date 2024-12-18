@@ -1,31 +1,52 @@
+<!-- sửa ở đây point 4 -->
 <div class="container mt-4">
     <div class="row">
         <!-- Sidebar lọc -->
         <div class="col-md-2">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="h5">Bộ lọc tìm kiếm</h3>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <h5 class="h6">Danh mục</h5>
-                        <ul class="list-unstyled">
-                            <?php foreach ($categories as $category): ?>
-                                <li>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="categories[]"
-                                            value="<?= $category['id'] ?>">
-                                        <label class="form-check-label">
-                                            <?= htmlspecialchars($category['name']) ?>
-                                        </label>
-                                    </div>
-                                </li>
+            <form action="/ecommerce-php/search" method="GET" class="mb-4">
+                <?php if (!empty($query)): ?>
+                    <input type="hidden" name="query" value="<?= htmlspecialchars($query) ?>">
+                <?php endif; ?>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="h5 mb-0">Bộ lọc tìm kiếm</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Lọc theo danh mục -->
+                        <div class="mb-3">
+                            <h5 class="h6">Danh mục</h5>
+                            <?php foreach ($categories as $cat): ?>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="category" 
+                                        value="<?= $cat['id'] ?>" id="cat_<?= $cat['id'] ?>"
+                                        <?= ($category === $cat['id']) ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="cat_<?= $cat['id'] ?>">
+                                        <?= htmlspecialchars($cat['name']) ?>
+                                    </label>
+                                </div>
                             <?php endforeach; ?>
-                        </ul>
-                        <button type="submit" class="btn btn-primary mt-3">Lọc</button>
+                        </div>
+
+                        <!-- Lọc theo giá -->
+                        <div class="mb-3">
+                            <h5 class="h6">Khoảng giá</h5>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="number" class="form-control" name="minPrice" 
+                                        placeholder="Từ" value="<?= htmlspecialchars($minPrice ?? '') ?>">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" class="form-control" name="maxPrice" 
+                                        placeholder="Đến" value="<?= htmlspecialchars($maxPrice ?? '') ?>">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Áp dụng</button>
                     </div>
                 </div>
-            </div>
+            </form>
         </div>
 
         <!-- Danh sách sản phẩm -->
@@ -111,21 +132,51 @@
             </div>
 
             <!-- Phân trang -->
-            <nav class="mt-4">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item <?= $currentPage == 1 ? 'disabled' : '' ?>">
-                        <a class="page-link" href="?page=1" tabindex="-1">Trước</a>
-                    </li>
-                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                        <li class="page-item <?= $currentPage == $i ? 'active' : '' ?>">
-                            <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
-                        </li>
-                    <?php endfor; ?>
-                    <li class="page-item <?= $currentPage == $totalPages ? 'disabled' : '' ?>">
-                        <a class="page-link" href="?page=<?= $totalPages ?>">Sau</a>
-                    </li>
-                </ul>
-            </nav>
+<?php if ($totalPages > 1): ?>
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            <?php if ($currentPage > 1): ?>
+                <li class="page-item">
+                    <a class="page-link" href="/ecommerce-php/?page=<?= $currentPage - 1 ?>">Trước</a>
+                </li>
+            <?php endif; ?>
+
+            <?php
+            $startPage = max(1, $currentPage - 2);
+            $endPage = min($totalPages, $currentPage + 2);
+            
+            if ($startPage > 1): ?>
+                <li class="page-item">
+                    <a class="page-link" href="/ecommerce-php/?page=1">1</a>
+                </li>
+                <?php if ($startPage > 2): ?>
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                <?php endif;
+            endif;
+
+            for ($i = $startPage; $i <= $endPage; $i++): ?>
+                <li class="page-item <?= $i === $currentPage ? 'active' : '' ?>">
+                    <a class="page-link" href="/ecommerce-php/?page=<?= $i ?>"><?= $i ?></a>
+                </li>
+            <?php endfor;
+
+            if ($endPage < $totalPages): ?>
+                <?php if ($endPage < $totalPages - 1): ?>
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                <?php endif; ?>
+                <li class="page-item">
+                    <a class="page-link" href="/ecommerce-php/?page=<?= $totalPages ?>"><?= $totalPages ?></a>
+                </li>
+            <?php endif;
+
+            if ($currentPage < $totalPages): ?>
+                <li class="page-item">
+                    <a class="page-link" href="/ecommerce-php/?page=<?= $currentPage + 1 ?>">Sau</a>
+                </li>
+            <?php endif; ?>
+        </ul>
+    </nav>
+<?php endif; ?>
         </div>
     </div>
 </div>

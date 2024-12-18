@@ -50,7 +50,8 @@
                         <h6>Thanh toán</h6>
                         <p class="mb-1">
                             <strong>Phương thức:</strong> 
-                            <?= $order['paymentMethod'] === 'COD' ? 'Thanh toán khi nhận hàng' : 'Chuyển khoản ngân hàng' ?>
+                            <?= $order['paymentMethod'] === 'COD' ? 'Thanh toán khi nhận hàng' : 
+                               ($order['paymentMethod'] === 'BANKING' ? 'Chuyển khoản ngân hàng' : $order['paymentMethod']) ?>
                         </p>
                         <p class="mb-1">
                             <strong>Trạng thái:</strong>
@@ -76,7 +77,7 @@
                         <strong><?= number_format($order['totalAmount']) ?>đ</strong>
                     </div>
 
-                    <?php if ($order['status'] === 'PENDING' || $order['status'] === 'PROCESSING'): ?>
+                    <?php if (isset($order['status']) && ($order['status'] === 'PENDING' || $order['status'] === 'PROCESSING')): ?>
                         <div class="mt-4">
                             <form action="/ecommerce-php/order/cancel/<?= $order['id'] ?>" 
                                   method="POST" class="d-inline">
@@ -103,7 +104,7 @@
                             <div class="timeline-item">
                                 <div class="timeline-marker"></div>
                                 <div class="timeline-content">
-                                    <h6 class="mb-0"><?= $history['statusText'] ?></h6>
+                                    <h6 class="mb-0"><?= $history['statusText'] ?? $history['status'] ?></h6>
                                     <small class="text-muted">
                                         <?= date('d/m/Y H:i', strtotime($history['createdAt'])) ?>
                                     </small>

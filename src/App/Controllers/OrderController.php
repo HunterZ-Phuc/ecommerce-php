@@ -73,7 +73,7 @@ class OrderController extends BaseController
         // 5. Lấy địa chỉ của user
         $addresses = $this->addressModel->findByUserId($userId);
         if (empty($addresses)) {
-            $_SESSION['error'] = 'Vui lòng th��m địa chỉ giao hàng';
+            $_SESSION['error'] = 'Vui lòng thêm địa chỉ giao hàng';
             $this->redirect('address/create');
             return;
         }
@@ -107,6 +107,7 @@ class OrderController extends BaseController
 
     public function create()
     {
+        // vãi cút đây là điêm point
         try {
             error_log('=== START CREATE ORDER ===');
             error_log('POST Data: ' . print_r($_POST, true));
@@ -127,10 +128,7 @@ class OrderController extends BaseController
             $cartItems = $_SESSION['selected_items'] ?? [];
             $selectedVariantIds = $_SESSION['selected_variant_ids'] ?? [];
 
-            error_log('Address ID: ' . $addressId);
-            error_log('Payment Method: ' . $paymentMethod);
-            error_log('Cart Items: ' . print_r($cartItems, true));
-            error_log('Selected Variant IDs: ' . print_r($selectedVariantIds, true));
+            
 
             // Validate dữ liệu
             if (!$addressId) {
@@ -220,7 +218,7 @@ class OrderController extends BaseController
                 unset($_SESSION['selected_variant_ids']);
 
                 $this->db->commit();
-                error_log('Transaction committed successfully');
+                error_log('Transaction committed successfully. Order ID: ' . $orderId);
 
                 // 7. Chuyển hướng
                 if ($paymentMethod === 'QR_TRANSFER') {
@@ -238,86 +236,137 @@ class OrderController extends BaseController
         } catch (Exception $e) {
             error_log('Order Creation Error: ' . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
-            $this->redirect('cart');
+            //$this->redirect('cart');
         }
     }
 
-    public function payment($orderId)
-    {
-        $userId = $this->auth->getUserId();
-        $order = $this->orderModel->getOrderDetails($orderId);
-
-        if (!$order || $order['userId'] !== $userId) {
-            $this->redirect('404');
-            return;
-        }
-
-        $this->view('order/payment', [
-            'title' => 'Thanh toán',
-            'order' => $order
-        ]);
-    }
-
-    public function uploadPayment($orderId)
+    public function payment($id)
     {
         try {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Invalid request method');
-            }
-
+            // Kiểm tra user đã đăng nhập
             $userId = $this->auth->getUserId();
-            $order = $this->orderModel->getOrderDetails($orderId);
-
-            if (!$order || $order['userId'] !== $userId) {
-                throw new Exception('Đơn hàng không tồn tại');
+            if (!$userId) {
+                throw new Exception('Vui lòng đăng nhập để tiếp tục');
             }
 
-            // Xử lý upload ảnh
-            if (!isset($_FILES['bankingImage']) || $_FILES['bankingImage']['error'] !== UPLOAD_ERR_OK) {
-                throw new Exception('Vui lòng chọn ảnh chuyển khoản');
+            // Lấy thông tin đơn hàng
+            $order = $this->orderModel->getOrderDetails($id);
+            
+            // Kiểm tra đơn hàng tồn tại và thuộc về user hiện tại
+            if (!$order || $order['userId'] != $userId) {
+                throw new Exception('Không tìm thấy đơn hàng');
             }
 
-            $file = $_FILES['bankingImage'];
-            $fileName = uniqid() . '_' . $file['name'];
-            $uploadPath = ROOT_PATH . '/public/uploads/payments/' . $fileName;
-
-            if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                throw new Exception('Không thể upload ảnh');
+            // Kiểm tra phương thức thanh toán
+            if ($order['paymentMethod'] !== 'QR_TRANSFER') {
+                throw new Exception('Phương thức thanh toán không hợp lệ');
             }
 
-            // Cập nhật đường dẫn ảnh
-            $this->orderModel->updateBankingImage($orderId, '/uploads/payments/' . $fileName);
+            // Tạo QR code nếu chưa có
+            if (empty($order['qrImage'])) {
+                // Tạo QR code và lưu vào database
+                $qrImage = $this->generateQRCode($order);
+                $this->orderModel->updateQRImage($id, $qrImage);
+                $order['qrImage'] = $qrImage;
+            }
 
-            $this->redirect("order/success/{$orderId}");
-
-        } catch (Exception $e) {
             $this->view('order/payment', [
-                'error' => $e->getMessage(),
+                'title' => 'Thanh toán đơn hàng #' . $id,
                 'order' => $order
             ]);
+
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect("order/detail/{$id}");
         }
     }
 
-    public function success($id = null)
+    private function generateQRCode($order)
+    {
+        // Thông tin tài khoản ngân hàng (có thể lấy từ config)
+        $bankInfo = [
+            'accountName' => 'NGUYEN VAN A',
+            'accountNumber' => '123456789',
+            'bankName' => 'VIETCOMBANK',
+            'amount' => $order['totalAmount'],
+            'description' => 'Thanh toan don hang #' . $order['id']
+        ];
+
+        // Tạo nội dung QR (có thể sử dụng thư viện để tạo QR thực tế)
+        $qrContent = json_encode($bankInfo);
+        
+        // Đường dẫn đến ảnh QR mẫu (tạm thời)
+        return '/ecommerce-php/public/assets/images/qr_banking.png';
+    }
+
+    public function confirmPayment($id)
     {
         try {
-            if (!$id) {
-                throw new Exception('Không tìm thấy đơn hàng');
-            }
-
             $userId = $this->auth->getUserId();
-            $order = $this->orderModel->getOrderDetails($id);
+            if (!$userId) {
+                throw new Exception('Vui lòng đăng nhập để tiếp tục');
+            }
 
-            if (!$order || $order['userId'] !== $userId) {
+            $order = $this->orderModel->getOrderDetails($id);
+            if (!$order || $order['userId'] != $userId) {
                 throw new Exception('Không tìm thấy đơn hàng');
             }
 
+            // Cập nhật trạng thái thanh toán
+            $this->orderModel->updatePaymentStatus($id, 'PENDING', 'Chờ xác nhận thanh toán');
+            
+            $_SESSION['success'] = 'Xác nhận thanh toán thành công. Chúng tôi sẽ kiểm tra và cập nhật trạng thái đơn hàng của bạn.';
+            $this->redirect("order/detail/{$id}");
+
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect("order/payment/{$id}");
+        }
+    }
+
+    public function success($id)
+    {
+        try {
+            error_log('=== START ORDER SUCCESS PAGE ===');
+            error_log('Order ID: ' . $id);
+            
+            $userId = $this->auth->getUserId();
+            if (!$userId) {
+                error_log('User not logged in');
+                $this->redirect('login');
+                return;
+            }
+
+            // Lấy thông tin đơn hàng
+            $order = $this->orderModel->getOrderDetails($id);
+            error_log('Order details: ' . print_r($order, true));
+            
+            if (!$order) {
+                error_log('Order not found');
+                throw new Exception('Không tìm thấy đơn hàng');
+            }
+
+            if ($order['userId'] != $userId) {
+                error_log('Order does not belong to user');
+                throw new Exception('Không có quyền xem đơn hàng này');
+            }
+
+            // Kiểm tra view có tồn tại
+            $viewPath = ROOT_PATH . '/src/App/Views/order/success.php';
+            if (!file_exists($viewPath)) {
+                error_log('View file not found: ' . $viewPath);
+                throw new Exception('Không tìm thấy template');
+            }
+
+            error_log('Rendering view with data');
             $this->view('order/success', [
                 'title' => 'Đặt hàng thành công',
-                'order' => $order
+                'order' => $order,
+                'pageTitle' => 'Đặt hàng thành công'
             ]);
 
         } catch (Exception $e) {
+            error_log('Error in success page: ' . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
             $this->redirect('order/history');
         }
@@ -325,54 +374,147 @@ class OrderController extends BaseController
 
     public function history()
     {
-        $userId = $this->auth->getUserId();
-        $orders = $this->orderModel->getOrdersByUser($userId);
-
-        $this->view('order/history', [
-            'title' => 'Lịch sử đơn hàng',
-            'orders' => $orders
-        ]);
-    }
-
-    public function detail($orderId)
-    {
-        $userId = $this->auth->getUserId();
-        $order = $this->orderModel->getOrderDetails($orderId);
-
-        if (!$order || $order['userId'] !== $userId) {
-            $this->redirect('404');
-            return;
+        try {
+            // Kiểm tra user đã đăng nhập
+            $userId = $this->auth->getUserId();
+            if (!$userId) {
+                $this->redirect('login');
+                return;
+            }
+    
+            // Lấy tham số page từ URL, mặc định là 1
+            $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+            $limit = 10; // Số đơn hàng mỗi trang
+            $offset = ($page - 1) * $limit;
+    
+            // Lấy danh sách đơn hàng
+            $orders = $this->orderModel->getOrdersByUserPaginated($userId, $limit, $offset);
+            $totalOrders = $this->orderModel->getTotalOrdersByUser($userId);
+            $totalPages = ceil($totalOrders / $limit);
+    
+            // Thêm thông tin trạng thái và màu sắc cho mỗi đơn hàng
+            foreach ($orders as &$order) {
+                $order['statusText'] = $this->getOrderStatusText($order['orderStatus']);
+                $order['statusColor'] = $this->getOrderStatusColor($order['orderStatus']);
+                $order['paymentStatusText'] = $this->getPaymentStatusText($order['paymentStatus']);
+                $order['paymentStatusColor'] = $this->getPaymentStatusColor($order['paymentStatus']);
+            }
+    
+            $this->view('order/history', [
+                'title' => 'Lịch sử đơn hàng',
+                'orders' => $orders,
+                'currentPage' => $page,
+                'totalPages' => $totalPages
+            ]);
+    
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect('home');
         }
-
-        $this->view('order/detail', [
-            'title' => 'Chi tiết đơn hàng #' . $orderId,
-            'order' => $order
-        ]);
     }
 
-    public function cancel($orderId)
+    public function detail($id)
     {
         try {
             $userId = $this->auth->getUserId();
-            $order = $this->orderModel->getOrderDetails($orderId);
+            $order = $this->orderModel->getOrderDetails($id);
 
             if (!$order || $order['userId'] !== $userId) {
-                throw new Exception('Đơn hàng không tồn tại');
+                $this->redirect('404');
+                return;
             }
 
-            if ($order['orderStatus'] !== 'PENDING') {
-                throw new Exception('Không thể hủy đơn hàng này');
-            }
+            // Thêm các trạng thái và màu sắc
+            $order['statusText'] = $this->getOrderStatusText($order['orderStatus']);
+            $order['statusColor'] = $this->getOrderStatusColor($order['orderStatus']);
+            $order['paymentStatusText'] = $this->getPaymentStatusText($order['paymentStatus']);
+            $order['paymentStatusColor'] = $this->getPaymentStatusColor($order['paymentStatus']);
 
-            $this->orderModel->updateOrderStatus($orderId, 'CANCELLED', 'Khách hàng hủy đơn', $userId);
-
-            $this->redirect("order/detail/{$orderId}");
-
-        } catch (Exception $e) {
             $this->view('order/detail', [
-                'error' => $e->getMessage(),
+                'title' => 'Chi tiết đơn hàng #' . $id,
                 'order' => $order
             ]);
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect('order/history');
+        }
+    }
+
+    private function getOrderStatusText($status)
+    {
+        $statusMap = [
+            'PENDING' => 'Chờ xác nhận',
+            'PROCESSING' => 'Đang xử lý',
+            'SHIPPING' => 'Đang giao hàng',
+            'DELIVERED' => 'Đã giao hàng',
+            'CANCELLED' => 'Đã hủy'
+        ];
+        return $statusMap[$status] ?? $status;
+    }
+
+    private function getOrderStatusColor($status)
+    {
+        $colorMap = [
+            'PENDING' => 'warning',
+            'PROCESSING' => 'info',
+            'SHIPPING' => 'primary',
+            'DELIVERED' => 'success',
+            'CANCELLED' => 'danger'
+        ];
+        return $colorMap[$status] ?? 'secondary';
+    }
+
+    private function getPaymentStatusText($status)
+    {
+        $statusMap = [
+            'PENDING' => 'Chờ thanh toán',
+            'PAID' => 'Đã thanh toán',
+            'CANCELLED' => 'Đã hủy'
+        ];
+        return $statusMap[$status] ?? $status;
+    }
+
+    private function getPaymentStatusColor($status)
+    {
+        $colorMap = [
+            'PENDING' => 'warning',
+            'PAID' => 'success',
+            'CANCELLED' => 'danger'
+        ];
+        return $colorMap[$status] ?? 'secondary';
+    }
+
+    public function cancel($id)
+    {
+        try {
+            $userId = $this->auth->getUserId();
+            if (!$userId) {
+                $this->redirect('login');
+                return;
+            }
+
+            $order = $this->orderModel->getOrderDetails($id);
+            if (!$order || $order['userId'] != $userId) {
+                throw new Exception('Không tìm thấy đơn hàng hoặc không có quyền hủy');
+            }
+
+            if (!in_array($order['orderStatus'], ['PENDING', 'PROCESSING'])) {
+                throw new Exception('Không thể hủy đơn hàng ở trạng thái này');
+            }
+
+            $this->orderModel->updateOrderStatus(
+                $id,
+                'CANCELLED',
+                'Đơn hàng đã bị hủy bởi khách hàng',
+                $userId
+            );
+
+            $_SESSION['success'] = 'Hủy đơn hàng thành công';
+            $this->redirect("order/detail/{$id}");
+
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect("order/detail/{$id}");
         }
     }
 }

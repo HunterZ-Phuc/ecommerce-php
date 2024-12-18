@@ -42,17 +42,37 @@ error_log('Selected Variant IDs: ' . print_r($selectedVariantIds, true));
                         </div>
 
                         <div class="form-group mb-3">
-                            <label>Phương thức thanh toán</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="paymentMethod" 
-                                       value="CASH_ON_DELIVERY" required>
-                                <label class="form-check-label">Thanh toán khi nhận hàng (COD)</label>
+                            <label class="form-label fw-bold">Phương thức thanh toán</label>
+                            <div class="payment-methods">
+                                <div class="form-check border rounded p-3 mb-2">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" 
+                                           value="CASH_ON_DELIVERY" id="cod" required>
+                                    <label class="form-check-label w-100" for="cod">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-money-bill-wave me-2"></i>
+                                            <div>
+                                                <strong>Thanh toán khi nhận hàng (COD)</strong>
+                                                <div class="text-muted small">Thanh toán bằng tiền mặt khi nhận hàng</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check border rounded p-3">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" 
+                                           value="QR_TRANSFER" id="qr" required>
+                                    <label class="form-check-label w-100" for="qr">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-qrcode me-2"></i>
+                                            <div>
+                                                <strong>Chuyển khoản qua QR</strong>
+                                                <div class="text-muted small">Quét mã QR để thanh toán</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="paymentMethod" 
-                                       value="QR_TRANSFER" required>
-                                <label class="form-check-label">Chuyển khoản qua QR</label>
-                            </div>
+                            <div class="invalid-feedback">Vui lòng chọn phương thức thanh toán</div>
                         </div>
 
                         <!-- Danh sách sản phẩm đã chọn -->

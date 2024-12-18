@@ -23,6 +23,7 @@ class HomeController extends BaseController
         $this->variantCombinationModel = new VariantCombination();
     }
 
+    //sửa ở đây point 3
     public function index()
     {
         try {
@@ -36,7 +37,7 @@ class HomeController extends BaseController
                 'minPrice' => '',
                 'maxPrice' => '',
                 'queryString' => '',
-                // Thêm danh sách categories từ enum trong database
+                'category' => '',
                 'categories' => [
                     ['id' => 'FRUITS', 'name' => 'Trái cây'],
                     ['id' => 'VEGETABLES', 'name' => 'Rau củ'],
@@ -54,27 +55,15 @@ class HomeController extends BaseController
             $conditions = ["p.status = 'ON_SALE'"];
             $params = [];
 
-            // Log điều kiện truy vấn
-            echo '<script>console.log("Query conditions:", ' . json_encode($conditions) . ');</script>';
-
             // Đếm tổng số sản phẩm và tính số trang
-            $whereClause = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
-            $totalProducts = $this->productModel->count($whereClause, $params);
-
-            // Log tổng số sản phẩm
-            echo '<script>console.log("Total products:", ' . $totalProducts . ');</script>';
-
-            // Tính tổng số trang
+            $totalProducts = $this->productModel->count(!empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '', $params);
             $totalPages = max(1, ceil($totalProducts / $limit));
-            $page = min($page, $totalPages); // Đảm bảo page không vượt quá totalPages
+            $page = min($page, $totalPages);
 
             // Lấy danh sách sản phẩm với phân trang
             $products = $this->productModel->findWithFilters($conditions, $params, $limit, $offset);
 
-            // Log chi tiết sản phẩm
-            echo '<script>console.log("Products data:", ' . json_encode($products) . ');</script>';
-
-            // Lấy thông tin biến thể và ảnh cho mỗi sản phẩm
+            // Lấy thông tin biến thể cho mỗi sản phẩm
             foreach ($products as &$product) {
                 $product['variants'] = $this->variantModel->findAllByProductId($product['id']);
                 if (empty($product['mainImage'])) {
@@ -82,26 +71,16 @@ class HomeController extends BaseController
                 }
             }
 
-            // Log dữ liệu sau khi thêm variants
-            echo '<script>console.log("Products with variants:", ' . json_encode($products) . ');</script>';
-
             // Cập nhật dữ liệu
             $data['products'] = $products;
             $data['totalPages'] = $totalPages;
             $data['currentPage'] = $page;
 
-            // Log dữ liệu cuối cùng
-            echo '<script>console.log("Final data:", ' . json_encode($data) . ');</script>';
-
             // Render view với dữ liệu
             $this->view('home/index', $data);
 
         } catch (\Exception $e) {
-            // Log lỗi chi tiết
-            echo '<script>console.error("Error:", ' . json_encode($e->getMessage()) . ');</script>';
             error_log("Home page error: " . $e->getMessage());
-
-            // Render view với thông báo lỗi
             $this->view('home/index', [
                 'title' => 'Trang chủ',
                 'error' => 'Có lỗi xảy ra khi tải dữ liệu'
@@ -167,6 +146,103 @@ class HomeController extends BaseController
             error_log("Product detail error: " . $e->getMessage());
             header('Location: /ecommerce-php/public/?error=' . urlencode('Không thể tải thông tin sản phẩm'));
             exit;
+        }
+    }
+
+    public function search()
+    {
+        try {
+            $query = $_GET['query'] ?? '';
+            $category = $_GET['category'] ?? '';
+            $minPrice = $_GET['minPrice'] ?? '';
+            $maxPrice = $_GET['maxPrice'] ?? '';
+            $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+            $limit = 12;
+            $offset = ($page - 1) * $limit;
+
+            // Khởi tạo mảng categories
+            $categories = [
+                ['id' => 'FRUITS', 'name' => 'Trái cây'],
+                ['id' => 'VEGETABLES', 'name' => 'Rau củ'],
+                ['id' => 'GRAINS', 'name' => 'Ngũ cốc'],
+                ['id' => 'OTHERS', 'name' => 'Khác']
+            ];
+
+            $conditions = [];
+            $params = [];
+
+            // Xử lý tìm kiếm theo tên sản phẩm
+            if (!empty($query)) {
+                $conditions[] = "p.productName LIKE :query";
+                $params[':query'] = "%{$query}%";
+            }
+
+            // Lọc theo danh mục
+            if (!empty($category)) {
+                $conditions[] = "p.category = :category";
+                $params[':category'] = $category;
+            }
+
+            // Lọc theo khoảng giá
+            if (!empty($minPrice)) {
+                $conditions[] = "pv.price >= :minPrice";
+                $params[':minPrice'] = $minPrice;
+            }
+            if (!empty($maxPrice)) {
+                $conditions[] = "pv.price <= :maxPrice";
+                $params[':maxPrice'] = $maxPrice;
+            }
+
+            // Chỉ lấy sản phẩm đang bán
+            $conditions[] = "p.status = 'ON_SALE'";
+
+            // Thực hiện tìm kiếm
+            $products = $this->productModel->findWithFilters($conditions, $params, $limit, $offset);
+            $totalProducts = $this->productModel->count(!empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '', $params);
+            $totalPages = ceil($totalProducts / $limit);
+
+            // Lấy thông tin biến thể cho mỗi sản phẩm
+            foreach ($products as &$product) {
+                $product['variants'] = $this->variantModel->findAllByProductId($product['id']);
+                if (empty($product['mainImage'])) {
+                    $product['mainImage'] = '/assets/images/no-image.png';
+                }
+            }
+
+            $data = [
+                'title' => 'Kết quả tìm kiếm',
+                'products' => $products,
+                'totalPages' => $totalPages,
+                'currentPage' => $page,
+                'query' => $query,
+                'category' => $category,
+                'minPrice' => $minPrice,
+                'maxPrice' => $maxPrice,
+                'categories' => $categories
+            ];
+
+            $this->view('home/index', $data);
+
+        } catch (\Exception $e) {
+            error_log("Search error: " . $e->getMessage());
+            // Trả về dữ liệu mặc định khi có lỗi
+            $this->view('home/index', [
+                'title' => 'Kết quả tìm kiếm',
+                'error' => 'Có lỗi xảy ra khi tìm kiếm',
+                'products' => [],
+                'totalPages' => 1,
+                'currentPage' => 1,
+                'query' => '',
+                'category' => '',
+                'minPrice' => '',
+                'maxPrice' => '',
+                'categories' => [
+                    ['id' => 'FRUITS', 'name' => 'Trái cây'],
+                    ['id' => 'VEGETABLES', 'name' => 'Rau củ'],
+                    ['id' => 'GRAINS', 'name' => 'Ngũ cốc'],
+                    ['id' => 'OTHERS', 'name' => 'Khác']
+                ]
+            ]);
         }
     }
 }

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Core;
-
+//sửa ở đây point 1
 class Router
 {
     protected $routes = [];
@@ -19,21 +19,26 @@ class Router
         $route = preg_replace('/\//', '\\/', $route);
         $route = preg_replace('/\{([a-z]+)\}/', '(?P<\1>[^\/]+)', $route);
         $route = preg_replace('/\{([a-z]+):([^\}]+)\}/', '(?P<\1>\2)', $route);
-        $route = '/^' . $route . '$/i';
+        $route = '/^' . $route . '(?:\?.*)?$/i';
 
         $this->routes[$route] = $params;
     }
 
     public function match($url)
     {
+        // Tách query string khỏi URL
+        $urlParts = explode('?', $url);
+        $path = $urlParts[0];
+        
+        // Nếu URL rỗng hoặc chỉ có '/', chuyển thành '/'
+        if (empty($path)) {
+            $path = '/';
+        }
+
         foreach ($this->routes as $route => $params) {
-            if (preg_match($route, $url, $matches)) {
-                // Lấy các tham số động từ URL
+            if (preg_match($route, $path, $matches)) {
                 foreach ($matches as $key => $match) {
                     if (is_string($key)) {
-                        if (!isset($params['params'])) {
-                            $params['params'] = [];
-                        }
                         $params['params'][$key] = $match;
                     }
                 }

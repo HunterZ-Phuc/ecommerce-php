@@ -5,7 +5,7 @@ namespace App\Models;
 use PDOException;
 
 use Exception;
-
+//sửa ở đây point 2
 class Product extends BaseModel
 {
     protected $table = 'products';
@@ -116,69 +116,81 @@ class Product extends BaseModel
         return $this->db->query($sql)->fetchAll();
     }
 
+    //sửa ở đây point 1
     public function findWithFilters($conditions = [], $params = [], $limit = null, $offset = null)
     {
-        $sql = "SELECT p.*, 
-                pv.price,
-                pi.imageUrl as mainImage
-                FROM products p
-                LEFT JOIN product_variants pv ON p.id = pv.productId
-                LEFT JOIN product_images pi ON p.id = pi.productId AND pi.isThumbnail = true";
+        try {
+            $sql = "SELECT DISTINCT p.*, 
+                    MIN(pv.price) as price,
+                    SUM(pv.quantity) as totalQuantity,
+                    pi.imageUrl as mainImage,
+                    COALESCE(SUM(oi.quantity), 0) as sold
+                    FROM products p
+                    LEFT JOIN product_variants pv ON p.id = pv.productId
+                    LEFT JOIN product_images pi ON p.id = pi.productId AND pi.isThumbnail = true
+                    LEFT JOIN order_items oi ON pv.id = oi.variantId";
 
-        if (!empty($conditions)) {
-            $sql .= " WHERE " . implode(' AND ', $conditions);
-        }
-
-        $sql .= " GROUP BY p.id ORDER BY p.createdAt DESC";
-
-        if ($limit !== null) {
-            $sql .= " LIMIT :limit";
-            if ($offset !== null) {
-                $sql .= " OFFSET :offset";
+            if (!empty($conditions)) {
+                $sql .= " WHERE " . implode(' AND ', $conditions);
             }
-        }
 
-        $stmt = $this->db->prepare($sql);
+            $sql .= " GROUP BY p.id";
+            
+            // Thêm ORDER BY để sắp xếp kết quả
+            $sql .= " ORDER BY p.createdAt DESC";
 
-        if (!empty($params)) {
+            if ($limit !== null) {
+                $sql .= " LIMIT :limit";
+                if ($offset !== null) {
+                    $sql .= " OFFSET :offset";
+                }
+            }
+
+            $stmt = $this->db->prepare($sql);
+
+            if ($limit !== null) {
+                $stmt->bindValue(':limit', (int) $limit, \PDO::PARAM_INT);
+                if ($offset !== null) {
+                    $stmt->bindValue(':offset', (int) $offset, \PDO::PARAM_INT);
+                }
+            }
+
             foreach ($params as $key => $value) {
-                $stmt->bindValue($key + 1, $value);
+                $stmt->bindValue($key, $value);
             }
-        }
 
-        if ($limit !== null) {
-            $stmt->bindValue(':limit', (int) $limit, \PDO::PARAM_INT);
-            if ($offset !== null) {
-                $stmt->bindValue(':offset', (int) $offset, \PDO::PARAM_INT);
-            }
+            $stmt->execute();
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception('Lỗi khi lấy danh sách sản phẩm: ' . $e->getMessage());
         }
-
-        $this->lastQuery = $sql;
-        $stmt->execute();
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     public function count($whereClause = '', $params = [])
     {
-        $sql = "SELECT COUNT(DISTINCT p.id) as total
-                FROM products p
-                LEFT JOIN product_variants pv ON p.id = pv.productId";
+        try {
+            $sql = "SELECT COUNT(DISTINCT p.id) as total
+                    FROM products p
+                    LEFT JOIN product_variants pv ON p.id = pv.productId";
 
-        if (!empty($whereClause)) {
-            $sql .= " $whereClause";
-        }
-
-        $stmt = $this->db->prepare($sql);
-
-        if (!empty($params)) {
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key + 1, $value);
+            if (!empty($whereClause)) {
+                $sql .= " $whereClause";
             }
-        }
 
-        $stmt->execute();
-        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return (int) $result['total'];
+            $stmt = $this->db->prepare($sql);
+
+            if (!empty($params)) {
+                foreach ($params as $key => $value) {
+                    $stmt->bindValue($key, $value);
+                }
+            }
+
+            $stmt->execute();
+            $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+            return (int) $result['total'];
+        } catch (PDOException $e) {
+            throw new Exception('Lỗi khi đếm sản phẩm: ' . $e->getMessage());
+        }
     }
 
     public function getDashboardStats()

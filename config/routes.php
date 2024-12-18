@@ -1,10 +1,13 @@
 <?php
 
 $router = new Core\Router;
-
+//sửa ở đây point 4
 // Home routes
 $router->add('/', ['controller' => 'Home', 'action' => 'index']);
 $router->add('/home', ['controller' => 'Home', 'action' => 'index']);
+// Thêm route cho tìm kiếm
+$router->add('/search', ['controller' => 'Home', 'action' => 'search']);
+
 $router->add('/product', ['controller' => 'Product', 'action' => 'index']);
 $router->add("/product/{id:\d+}", ["controller" => "home", "action" => "productDetail"]);
 
@@ -21,7 +24,9 @@ $router->add('/order/create', ['controller' => 'Order', 'action' => 'create']);
 $router->add('/order/success/{id:\d+}', ['controller' => 'Order', 'action' => 'success']);
 $router->add('/order/cancel/{id:\d+}', ['controller' => 'Order', 'action' => 'cancel']);
 $router->add('/order/detail/{id:\d+}', ['controller' => 'Order', 'action' => 'detail']);
-$router->add('/order/history', ['controller' => 'Order', 'action' => 'history']);
+$router->add('/order/history[?page=\d+]?', ['controller' => 'Order', 'action' => 'history']);
+$router->add('/order/payment/{id:\d+}', ['controller' => 'Order', 'action' => 'payment']);
+$router->add('/order/confirmPayment/{id:\d+}', ['controller' => 'Order', 'action' => 'confirmPayment']);
 
 // Payment routes
 $router->add('/payment/banking/{id:\d+}', ['controller' => 'Payment', 'action' => 'banking']);
@@ -36,6 +41,7 @@ $router->add("/user/profile/update", ["controller" => "User", "action" => "updat
 $router->add("/user/profile/update-avatar", ["controller" => "User", "action" => "updateAvatar"]);
 $router->add("/user/profile/update-email", ["controller" => "User", "action" => "updateEmail"]);
 $router->add("/user/profile/update-phone", ["controller" => "User", "action" => "updatePhone"]);
+//$router->add("/user/orders", ["controller" => "Order", "action" => "orders"]);
 
 // Routes quản lý địa chỉ
 $router->add("/user/addresses", ["controller" => "User", "action" => "addresses"]);

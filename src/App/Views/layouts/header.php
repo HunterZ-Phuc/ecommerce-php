@@ -13,6 +13,7 @@
 </head>
 
 <body>
+    <!-- sửa ở đây point 1 -->
     <nav class="navbar navbar-expand-lg" style="background-color: #f8f9fa;">
         <div class="container">
             <!-- Logo -->
@@ -23,8 +24,10 @@
 
             <!-- Search Bar -->
             <div class="d-flex flex-grow-1 mx-lg-4">
-                <form class="d-flex w-100" method="get" action="/ecommerce-php/search">
-                    <input class="form-control me-2" type="search" name="query" placeholder="Tìm kiếm sản phẩm..."
+                <form class="d-flex w-100" method="GET" action="/ecommerce-php/search">
+                    <input class="form-control me-2" type="search" name="query" 
+                        placeholder="Tìm kiếm sản phẩm..." 
+                        value="<?= htmlspecialchars($_GET['query'] ?? '') ?>" 
                         required>
                     <button class="btn btn-success" type="submit">
                         <i class="fa fa-search"></i>
@@ -58,7 +61,7 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
                             <li><a class="dropdown-item" href="/ecommerce-php/user/profile">Tài Khoản Của Tôi</a></li>
-                            <li><a class="dropdown-item" href="/ecommerce-php/user/orders">Đơn Mua</a></li>
+                            <li><a class="dropdown-item" href="/ecommerce-php/order/history">Đơn Mua</a></li>
                             <li>
                                 <hr class="dropdown-divider">
                             </li>

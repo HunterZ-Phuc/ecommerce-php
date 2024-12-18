@@ -1,6 +1,6 @@
 <?php
 namespace Core;
-
+//sửa ở đây point 1
 class App
 {
     private $router;
@@ -16,6 +16,11 @@ class App
         try {
             // Loại bỏ tên thư mục gốc khỏi path
             $path = preg_replace('/^\/ecommerce-php/', '', $path);
+            
+            // Nếu path rỗng, đặt thành '/'
+            if (empty($path)) {
+                $path = '/';
+            }
 
             // Xử lý route cho trang lỗi 403
             if ($path === '/403') {
@@ -43,7 +48,8 @@ class App
 
                 // Kiểm tra xem action có tồn tại trong controller không
                 if (method_exists($controllerInstance, $action)) {
-                    call_user_func_array([$controllerInstance, $action], $params['params'] ?? []); // Gọi action với các tham số từ params
+                    $actionParams = $params['params'] ?? [];
+                    call_user_func_array([$controllerInstance, $action], $actionParams);
                 } else {
                     $this->show404(); // Nếu action không tồn tại, hiển thị trang 404
                 }
@@ -51,6 +57,7 @@ class App
                 $this->show404(); // Nếu controller không tồn tại, hiển thị trang 404
             }
         } catch (\Exception $e) {
+            error_log($e->getMessage());
             $this->show404();
         }
     }
