@@ -173,10 +173,26 @@ error_log("View received product data: " . json_encode($product));
 
     // Xử lý form submit
     document.getElementById('addToCartForm').addEventListener('submit', function(e) {
-        if (!selectedVariantIdInput.value) {
-            e.preventDefault();
-            alert('Vui lòng chọn đầy đủ các tùy chọn sản phẩm');
-        }
+        e.preventDefault(); // Ngăn chặn hành động mặc định của form
+
+        const formData = new FormData(this); // Lấy dữ liệu từ form
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message); // Hiển thị thông báo thành công
+            } else {
+                alert(data.message); // Hiển thị thông báo lỗi
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Đã xảy ra lỗi, vui lòng thử lại.');
+        });
     });
 </script>
 
