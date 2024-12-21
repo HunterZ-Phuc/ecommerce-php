@@ -5,6 +5,10 @@ $router = new Core\Router;
 // Home routes
 $router->add('/', ['controller' => 'Home', 'action' => 'index']);
 $router->add('/home', ['controller' => 'Home', 'action' => 'index']);
+$router->add('/about', ['controller' => 'Home', 'action' => 'about']);
+
+$router->add('/contact', ['controller' => 'Home', 'action' => 'contact']);
+
 // Thêm route cho tìm kiếm
 $router->add('/search', ['controller' => 'Home', 'action' => 'search']);
 
