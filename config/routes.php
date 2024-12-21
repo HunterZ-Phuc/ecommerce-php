@@ -15,7 +15,7 @@ $router->add("/product/{id:\d+}", ["controller" => "home", "action" => "productD
 $router->add('/cart', ['controller' => 'Cart', 'action' => 'index']);
 $router->add('/cart/add', ['controller' => 'Cart', 'action' => 'add']);
 $router->add('/cart/update', ['controller' => 'Cart', 'action' => 'update']);
-$router->add('/cart/remove/{id:\d+}', ['controller' => 'Cart', 'action' => 'remove']);
+$router->add('/cart/remove', ['controller' => 'Cart', 'action' => 'remove']);
 $router->add('/cart/clear', ['controller' => 'Cart', 'action' => 'clear']);
 
 // Order routes
