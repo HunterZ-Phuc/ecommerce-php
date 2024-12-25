@@ -47,6 +47,9 @@ abstract class BaseController
             if (strpos($view, 'admin/') === 0) {
                 // Nếu view có prefix 'admin/', sử dụng layout admin
                 $defaultLayout = 'layouts/admin_layout.php';
+            } else if (strpos($view, 'employee/') === 0) {
+                // Nếu view có prefix 'employee/', sử dụng layout employee
+                $defaultLayout = 'layouts/employee_layout.php';
             } else if (strpos($view, 'user/') === 0) {
                 // Nếu view có prefix 'user/', sử dụng layout user
                 $defaultLayout = 'layouts/user_layout.php';

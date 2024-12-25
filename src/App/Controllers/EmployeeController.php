@@ -6,12 +6,14 @@ use App\Models\Employee;
 use App\Models\Product;
 use App\Models\Order;
 use Exception;
+use Core\Database;
 
 class EmployeeController extends BaseController
 {
     private $model;
     private $productModel;
     private $orderModel;
+    private $db;
 
     public function __construct()
     {
@@ -20,6 +22,7 @@ class EmployeeController extends BaseController
         $this->model = new Employee();
         $this->productModel = new Product();
         $this->orderModel = new Order();
+        $this->db = Database::getInstance()->getConnection();
     }
 
     public function index()
@@ -35,7 +38,7 @@ class EmployeeController extends BaseController
             $totalProducts = count($products);
             
             $outOfStockProducts = 0;
-            $lowStockProducts = 0;
+            $lowStockProducts = $this->productModel->getLowStockCount();
             $activeProducts = 0;
             $lowStockProductsList = [];
             
@@ -52,7 +55,6 @@ class EmployeeController extends BaseController
                 if ($totalStock == 0) {
                     $outOfStockProducts++;
                 } elseif ($totalStock <= 10) {
-                    $lowStockProducts++;
                     // Thêm vào danh sách sản phẩm sắp hết hàng
                     $lowStockProductsList[] = [
                         'id' => $product['id'],
@@ -183,27 +185,35 @@ class EmployeeController extends BaseController
 
     public function orders()
     {
-        $orders = $this->orderModel->getPendingOrders();
-
-        $this->view('employee/orders', [
-            'title' => 'Quản lý đơn hàng',
-            'orders' => $orders
-        ]);
+        try {
+            $orders = $this->orderModel->getAllOrders();
+            
+            $this->view('employee/OrdersManagement/orders', [
+                'title' => 'Quản lý đơn hàng',
+                'orders' => $orders
+            ]);
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect('employee/dashboard');
+        }
     }
 
-    public function orderDetail($orderId)
+    public function orderDetail($id)
     {
-        $order = $this->orderModel->getOrderDetails($orderId);
+        try {
+            $order = $this->orderModel->getOrderById($id);
+            if (!$order) {
+                throw new Exception('Không tìm thấy đơn hàng');
+            }
+            return $this->view('employee/OrdersManagement/order-detail', [
+                'title' => 'Chi tiết đơn hàng #' . $id,
+                'order' => $order
+            ]);
 
-        if (!$order) {
-            $this->redirect('404');
-            return;
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect('employee/orders');
         }
-
-        $this->view('employee/order-detail', [
-            'title' => 'Chi tiết đơn hàng #' . $orderId,
-            'order' => $order
-        ]);
     }
 
     public function updateOrderStatus()
@@ -225,17 +235,27 @@ class EmployeeController extends BaseController
             $this->orderModel->updateOrderStatus($orderId, $status, $note, $userId);
 
             // Nếu đơn hàng đã giao thành công và thanh toán COD
-            $order = $this->orderModel->getOrderDetails($orderId);
-            if ($status === 'DELIVERED' && $order['paymentMethod'] === 'COD') {
+            $order = $this->orderModel->getOrderById($orderId);
+            if ($status === 'DELIVERED' && $order['paymentMethod'] === 'CASH_ON_DELIVERY') {
                 $this->orderModel->updatePaymentStatus($orderId, 'PAID');
             }
 
-            $this->redirect("employee/order-detail/{$orderId}");
+            $_SESSION['success'] = 'Cập nhật trạng thái đơn hàng thành công';
+            // Lấy lại thông tin đơn hàng mới nhất
+            $updatedOrder = $this->orderModel->getOrderById($orderId);
+            
+            // Render lại view với dữ liệu mới
+            return $this->view('employee/OrdersManagement/order-detail', [
+                'title' => 'Chi tiết đơn hàng #' . $orderId,
+                'order' => $updatedOrder
+            ]);
 
         } catch (Exception $e) {
-            $this->view('employee/order-detail', [
-                'error' => $e->getMessage(),
-                'order' => $order ?? null
+            $_SESSION['error'] = $e->getMessage();
+            $order = $this->orderModel->getOrderById($orderId);
+            return $this->view('employee/OrdersManagement/order-detail', [
+                'title' => 'Chi tiết đơn hàng #' . $orderId,
+                'order' => $order
             ]);
         }
     }
@@ -243,37 +263,32 @@ class EmployeeController extends BaseController
     public function confirmPayment()
     {
         try {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Invalid request method');
-            }
+            $this->db->beginTransaction();
 
             $orderId = $_POST['orderId'] ?? null;
             $status = $_POST['status'] ?? null;
+            // Thêm note tương ứng với trạng thái
+            $note = $status === 'PAID' ? 
+                'Xác nhận đã nhận được thanh toán' : 
+                'Thanh toán thất bại';
 
-            if (!$orderId || !$status) {
-                throw new Exception('Thiếu thông tin cần thiết');
-            }
+            // Gọi updatePaymentStatus với note
+            $this->orderModel->updatePaymentStatus($orderId, $status, $note);
 
-            $this->orderModel->updatePaymentStatus($orderId, $status);
-
-            // Nếu xác nhận thanh toán thành công
+            // Nếu thanh toán thành công, cập nhật trạng thái đơn hàng sang CONFIRMED
             if ($status === 'PAID') {
                 $userId = $this->auth->getUserId();
-                $this->orderModel->updateOrderStatus(
-                    $orderId, 
-                    'PROCESSING', 
-                    'Thanh toán đã được xác nhận',
-                    $userId
-                );
+                $this->orderModel->updateOrderStatus($orderId, 'CONFIRMED', 'Thanh toán thành công', $userId);
             }
 
-            $this->redirect("employee/order-detail/{$orderId}");
+            $this->db->commit();
+            $_SESSION['success'] = 'Cập nhật trạng thái thanh toán thành công';
+            $this->redirect("employee/order/{$orderId}");
 
         } catch (Exception $e) {
-            $this->view('employee/order-detail', [
-                'error' => $e->getMessage(),
-                'order' => $order ?? null
-            ]);
+            $this->db->rollBack();
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect("employee/order/{$orderId}");
         }
     }
 

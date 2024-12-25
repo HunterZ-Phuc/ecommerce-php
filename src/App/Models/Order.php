@@ -65,34 +65,42 @@ class Order extends BaseModel
             throw new Exception("Lỗi khi cập nhật ảnh thanh toán: " . $e->getMessage());
         }
     }
+    // Sửa 2
+    public function canUpdateStatus($currentStatus, $newStatus) 
+    {
+        $validTransitions = [
+            'PENDING' => ['PROCESSING', 'CANCELLED'],
+            'PROCESSING' => ['CONFIRMED', 'CANCELLED'],
+            'CONFIRMED' => ['SHIPPING', 'CANCELLED'],
+            'SHIPPING' => ['DELIVERED', 'RETURN_REQUEST'],
+            'DELIVERED' => [],
+            'RETURN_REQUEST' => ['RETURN_APPROVED', 'DELIVERED'],
+            'RETURN_APPROVED' => ['RETURNED'],
+            'RETURNED' => [],
+            'CANCELLED' => []
+        ];
 
-    public function updateOrderStatus($orderId, $status, $note = '', $updatedBy = null)
+        return in_array($newStatus, $validTransitions[$currentStatus] ?? []);
+    }
+
+    public function updateOrderStatus($orderId, $status, $note, $updatedBy)
     {
         try {
-            $this->db->beginTransaction();
-
             // Cập nhật trạng thái đơn hàng
             $sql = "UPDATE orders SET orderStatus = :status WHERE id = :orderId";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                'orderId' => $orderId,
-                'status' => $status
-            ]);
+            $stmt->execute(['status' => $status, 'orderId' => $orderId]);
 
             // Thêm vào lịch sử
             $this->createOrderHistory([
                 'orderId' => $orderId,
                 'status' => $status,
                 'note' => $note,
-                'updatedBy' => $updatedBy
+                'createdBy' => $updatedBy
             ]);
 
-            $this->db->commit();
-            return true;
-
         } catch (PDOException $e) {
-            $this->db->rollBack();
-            throw new Exception("Lỗi khi cập nhật trạng thái đơn hàng: " . $e->getMessage());
+            throw new Exception("Error: " . $e->getMessage());
         }
     }
 
@@ -227,15 +235,18 @@ class Order extends BaseModel
     public function updatePaymentStatus($orderId, $status, $note = '')
     {
         try {
+            // Cập nhật trạng thái thanh toán trong bảng payments
             $sql = "UPDATE payments 
-                    SET paymentStatus = :status, note = :note 
+                    SET paymentStatus = :status,
+                        note = :note,
+                        updatedAt = CURRENT_TIMESTAMP
                     WHERE orderId = :orderId";
                     
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
-                'orderId' => $orderId,
                 'status' => $status,
-                'note' => $note
+                'note' => $note,
+                'orderId' => $orderId
             ]);
         } catch (PDOException $e) {
             throw new Exception("Lỗi khi cập nhật trạng thái thanh toán: " . $e->getMessage());
@@ -292,5 +303,326 @@ class Order extends BaseModel
         } catch (PDOException $e) {
             throw new Exception("Lỗi khi đếm tổng số đơn hàng: " . $e->getMessage());
         }
+    }
+
+    public function getAllOrders()
+    {
+        try {
+            $sql = "SELECT o.*,
+                    u.fullName as customerName,
+                    u.phone,
+                    a.fullName as receiverName,
+                    a.phoneNumber as receiverPhone,
+                    a.address,
+                    p.paymentMethod,
+                    p.paymentStatus,
+                    p.amount as paidAmount,
+                    GROUP_CONCAT(DISTINCT oi.id) as orderItemIds,
+                    GROUP_CONCAT(DISTINCT oh.status) as statusHistory,
+                    GROUP_CONCAT(DISTINCT oh.note) as statusNotes,
+                    GROUP_CONCAT(DISTINCT oh.createdAt) as statusDates,
+                    GROUP_CONCAT(DISTINCT 
+                        CONCAT(pv.id, ':', oi.quantity, ':', oi.price, ':', prod.productName)
+                        ORDER BY oi.id
+                    ) as items
+                    FROM orders o
+                    LEFT JOIN users u ON o.userId = u.id
+                    LEFT JOIN addresses a ON o.addressId = a.id
+                    LEFT JOIN payments p ON o.id = p.orderId
+                    LEFT JOIN order_items oi ON o.id = oi.orderId
+                    LEFT JOIN product_variants pv ON oi.variantId = pv.id
+                    LEFT JOIN products prod ON pv.productId = prod.id
+                    LEFT JOIN order_history oh ON o.id = oh.orderId
+                    GROUP BY o.id
+                    ORDER BY o.createdAt DESC";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Xử lý dữ liệu sau khi lấy
+            foreach ($orders as &$order) {
+                // Chuyển đổi chuỗi items thành mảng
+                $itemsArray = [];
+                if (!empty($order['items'])) {
+                    $items = explode(',', $order['items']);
+                    foreach ($items as $item) {
+                        list($variantId, $quantity, $price, $productName) = explode(':', $item);
+                        $itemsArray[] = [
+                            'variantId' => $variantId,
+                            'quantity' => $quantity,
+                            'price' => $price,
+                            'productName' => $productName
+                        ];
+                    }
+                }
+                $order['items'] = $itemsArray;
+
+                // Chuyển đổi lịch sử trạng thái
+                $statusHistory = [];
+                if (!empty($order['statusHistory'])) {
+                    $statuses = explode(',', $order['statusHistory']);
+                    $notes = explode(',', $order['statusNotes']);
+                    $dates = explode(',', $order['statusDates']);
+                    
+                    for ($i = 0; $i < count($statuses); $i++) {
+                        $statusHistory[] = [
+                            'status' => $statuses[$i],
+                            'note' => $notes[$i] ?? '',
+                            'date' => $dates[$i] ?? ''
+                        ];
+                    }
+                }
+                $order['statusHistory'] = $statusHistory;
+
+                // Xóa các trường không cần thiết
+                unset($order['statusNotes']);
+                unset($order['statusDates']);
+            }
+
+            return $orders;
+        } catch (PDOException $e) {
+            throw new Exception("Lỗi khi lấy danh sách đơn hàng: " . $e->getMessage());
+        }
+    }
+
+    public function getOrdersByStatus($status)
+    {
+        try {
+            $sql = "SELECT o.*, 
+                    u.fullName as customerName,
+                    u.phone,
+                    a.address,
+                    a.ward,
+                    a.district,
+                    a.province,
+                    p.paymentMethod,
+                    p.status as paymentStatus,
+                    p.amount as paidAmount
+                    FROM orders o
+                    LEFT JOIN users u ON o.userId = u.id
+                    LEFT JOIN addresses a ON o.addressId = a.id 
+                    LEFT JOIN payments p ON o.id = p.orderId
+                    WHERE o.orderStatus = :status
+                    ORDER BY o.createdAt DESC";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':status', $status, PDO::PARAM_STR);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Lỗi khi lấy danh sách đơn hàng theo trạng thái: " . $e->getMessage());
+        }
+    }
+
+    public function getPendingOrders()
+    {
+        return $this->getOrdersByStatus('PENDING');
+    }
+
+    public function getOrderById($id)
+    {
+        try {
+            $sql = "SELECT o.*,
+                    u.fullName as customerName,
+                    u.phone,
+                    a.fullName as receiverName,
+                    a.phoneNumber as receiverPhone,
+                    a.address,
+                    p.paymentMethod,
+                    p.paymentStatus,
+                    p.amount as paidAmount,
+                    GROUP_CONCAT(DISTINCT oi.id) as orderItemIds,
+                    GROUP_CONCAT(DISTINCT oh.status) as statusHistory,
+                    GROUP_CONCAT(DISTINCT oh.note) as statusNotes,
+                    GROUP_CONCAT(DISTINCT oh.createdAt) as statusDates,
+                    GROUP_CONCAT(DISTINCT 
+                        CONCAT(pv.id, ':', oi.quantity, ':', oi.price, ':', prod.productName)
+                        ORDER BY oi.id
+                    ) as items
+                    FROM orders o
+                    LEFT JOIN users u ON o.userId = u.id
+                    LEFT JOIN addresses a ON o.addressId = a.id
+                    LEFT JOIN payments p ON o.id = p.orderId
+                    LEFT JOIN order_items oi ON o.id = oi.orderId
+                    LEFT JOIN product_variants pv ON oi.variantId = pv.id
+                    LEFT JOIN products prod ON pv.productId = prod.id
+                    LEFT JOIN order_history oh ON o.id = oh.orderId
+                    WHERE o.id = ?
+                    GROUP BY o.id";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$id]);
+            $order = $stmt->fetch();
+
+            // Xử lý dữ liệu trả về
+            if ($order) {
+                // Xử lý items
+                $itemsArray = [];
+                if (!empty($order['items'])) {
+                    $items = explode(',', $order['items']);
+                    foreach ($items as $item) {
+                        list($variantId, $quantity, $price, $productName) = explode(':', $item);
+                        $itemsArray[] = [
+                            'variantId' => $variantId,
+                            'quantity' => $quantity,
+                            'price' => $price,
+                            'productName' => $productName
+                        ];
+                    }
+                }
+                $order['items'] = $itemsArray;
+
+                // Xử lý lịch sử trạng thái
+                $statusHistory = [];
+                if (!empty($order['statusHistory'])) {
+                    $statuses = explode(',', $order['statusHistory']);
+                    $notes = explode(',', $order['statusNotes']);
+                    $dates = explode(',', $order['statusDates']);
+                    
+                    for ($i = 0; $i < count($statuses); $i++) {
+                        $statusHistory[] = [
+                            'status' => $statuses[$i],
+                            'note' => $notes[$i] ?? '',
+                            'date' => $dates[$i] ?? ''
+                        ];
+                    }
+                }
+                $order['statusHistory'] = $statusHistory;
+            }
+
+            return $order;
+        } catch (PDOException $e) {
+            throw new Exception("Lỗi khi lấy thông tin đơn hàng: " . $e->getMessage());
+        }
+    }
+
+    public function requestReturn($orderId, $reason)
+    {
+        try {
+            $this->db->beginTransaction();
+            
+            // Cập nhật trạng thái đơn hàng
+            $sql = "UPDATE orders SET 
+                    orderStatus = 'RETURN_REQUEST',
+                    returnReason = :reason,
+                    returnRequestDate = CURRENT_TIMESTAMP
+                    WHERE id = :orderId";
+                    
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                'orderId' => $orderId,
+                'reason' => $reason
+            ]);
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    public function getTotalOrders()
+    {
+        try {
+            $sql = "SELECT COUNT(*) FROM {$this->table}";
+            return $this->db->query($sql)->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Error getting total orders: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    public function getCurrentMonthRevenue()
+    {
+        try {
+            $sql = "SELECT COALESCE(SUM(totalAmount), 0) 
+                    FROM {$this->table} 
+                    WHERE MONTH(createdAt) = MONTH(CURRENT_DATE)
+                    AND YEAR(createdAt) = YEAR(CURRENT_DATE)
+                    AND orderStatus = 'DELIVERED'";
+            return $this->db->query($sql)->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Error getting current month revenue: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    public function getMonthlyRevenue()
+    {
+        try {
+            $sql = "SELECT 
+                        DATE_FORMAT(createdAt, '%m/%Y') as label,
+                        COALESCE(SUM(totalAmount), 0) as value
+                    FROM {$this->table}
+                    WHERE orderStatus = 'DELIVERED'
+                    GROUP BY DATE_FORMAT(createdAt, '%Y-%m')
+                    ORDER BY createdAt DESC
+                    LIMIT 12";
+            
+            $result = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+            
+            return [
+                'labels' => array_column($result, 'label'),
+                'values' => array_column($result, 'value')
+            ];
+        } catch (PDOException $e) {
+            error_log("Error getting monthly revenue: " . $e->getMessage());
+            return ['labels' => [], 'values' => []];
+        }
+    }
+
+    public function getOrderStatusDistribution()
+    {
+        try {
+            $sql = "SELECT 
+                        orderStatus as label,
+                        COUNT(*) as value
+                    FROM {$this->table}
+                    GROUP BY orderStatus";
+            
+            $result = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+            
+            return [
+                'labels' => array_map([$this, 'translateOrderStatus'], array_column($result, 'label')),
+                'values' => array_column($result, 'value')
+            ];
+        } catch (PDOException $e) {
+            error_log("Error getting order status distribution: " . $e->getMessage());
+            return ['labels' => [], 'values' => []];
+        }
+    }
+
+    private function translateOrderStatus($status)
+    {
+        $translations = [
+            'PENDING' => 'Chờ xử lý',
+            'PROCESSING' => 'Đang xử lý',
+            'CONFIRMED' => 'Đã xác nhận',
+            'SHIPPING' => 'Đang giao hàng',
+            'DELIVERED' => 'Đã giao hàng',
+            'CANCELLED' => 'Đã hủy',
+            'RETURN_REQUEST' => 'Yêu cầu trả hàng',
+            'RETURNED' => 'Đã trả hàng'
+        ];
+        
+        return $translations[$status] ?? $status;
+    }
+
+    private function getOrderStatusInfo($status)
+    {
+        $statusInfo = [
+            'PENDING' => ['color' => 'warning', 'text' => 'Chờ xử lý'],
+            'PROCESSING' => ['color' => 'info', 'text' => 'Đang xử lý'],
+            'CONFIRMED' => ['color' => 'primary', 'text' => 'Đã xác nhận'],
+            'SHIPPING' => ['color' => 'info', 'text' => 'Đang giao hàng'],
+            'DELIVERED' => ['color' => 'success', 'text' => 'Đã giao hàng'],
+            'CANCELLED' => ['color' => 'danger', 'text' => 'Đã hủy'],
+            'RETURN_REQUEST' => ['color' => 'warning', 'text' => 'Yêu cầu trả hàng'],
+            'RETURNED' => ['color' => 'secondary', 'text' => 'Đã trả hàng']
+        ];
+        
+        return $statusInfo[$status] ?? ['color' => 'secondary', 'text' => $status];
     }
 }

@@ -66,11 +66,39 @@ class UserController extends BaseController
 
             // Validate dữ liệu
             $fullName = $_POST['fullName'] ?? '';
+            $email = $_POST['email'] ?? '';
+            $phone = $_POST['phone'] ?? '';
             $sex = $_POST['sex'] ?? '';
             $dateOfBirth = $_POST['dateOfBirth'] ?? '';
 
             if (empty($fullName) || empty($sex) || empty($dateOfBirth)) {
                 throw new Exception('Vui lòng điền đầy đủ thông tin');
+            }
+
+            // Validate email nếu có
+            if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                throw new Exception('Email không hợp lệ');
+            }
+
+            // Validate số điện thoại nếu có
+            if (!empty($phone) && !preg_match('/^[0-9]{10,11}$/', $phone)) {
+                throw new Exception('Số điện thoại không hợp lệ');
+            }
+
+            // Kiểm tra email đã tồn tại (nếu có thay đổi)
+            if (!empty($email)) {
+                $existingUser = $this->userModel->findByEmail($email);
+                if ($existingUser && $existingUser['id'] != $userId) {
+                    throw new Exception('Email đã được sử dụng');
+                }
+            }
+
+            // Kiểm tra số điện thoại đã tồn tại (nếu có thay đổi)
+            if (!empty($phone)) {
+                $existingUser = $this->userModel->findByPhone($phone);
+                if ($existingUser && $existingUser['id'] != $userId) {
+                    throw new Exception('Số điện thoại đã được sử dụng');
+                }
             }
 
             // Cập nhật thông tin
@@ -80,7 +108,25 @@ class UserController extends BaseController
                 'dateOfBirth' => $dateOfBirth
             ];
 
-            $this->userModel->update($userId, $updateData);
+            // Thêm email và phone vào dữ liệu cập nhật nếu có
+            if (!empty($email)) {
+                $updateData['email'] = $email;
+            }
+            if (!empty($phone)) {
+                $updateData['phone'] = $phone;
+            }
+
+            // Cập nhật database
+            if (!$this->userModel->update($userId, $updateData)) {
+                throw new Exception('Không thể cập nhật thông tin');
+            }
+
+            // Cập nhật session
+            $_SESSION['user'] = array_merge($_SESSION['user'] ?? [], [
+                'fullName' => $fullName,
+                'email' => $email,
+                'phone' => $phone
+            ]);
 
             echo json_encode([
                 'success' => true,
@@ -108,22 +154,33 @@ class UserController extends BaseController
 
             $userId = $this->auth->getUserId();
 
-            // Xử lý upload file
+            // Kiểm tra file upload
             if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
                 throw new Exception('Không có file được upload');
             }
 
             $file = $_FILES['avatar'];
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
 
+            // Kiểm tra định dạng file
+            $allowedTypes = ['image/jpeg', 'image/png'];
             if (!in_array($file['type'], $allowedTypes)) {
-                throw new Exception('Chỉ chấp nhận file ảnh (JPG, PNG, GIF)');
+                throw new Exception('Chỉ chấp nhận file JPG hoặc PNG');
+            }
+
+            // Lấy avatar cũ từ database
+            $user = $this->userModel->findById($userId);
+            $oldAvatarPath = $user['avatar'] ?? null;
+
+            // Tạo thư mục uploads nếu chưa tồn tại
+            $uploadDir = ROOT_PATH . '/public/uploads/avatars/';
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
             }
 
             // Tạo tên file mới
             $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
             $newFileName = 'avatar_' . $userId . '_' . time() . '.' . $extension;
-            $uploadPath = ROOT_PATH . '/public/uploads/avatars/' . $newFileName;
+            $uploadPath = $uploadDir . $newFileName;
 
             // Di chuyển file
             if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
@@ -131,20 +188,36 @@ class UserController extends BaseController
             }
 
             // Cập nhật DB
-            $data = ['avatar' => '/uploads/avatars/' . $newFileName];
-            $this->userModel->update($userId, $data);
+            $avatarPath = '/uploads/avatars/' . $newFileName;
+            if (!$this->userModel->update($userId, ['avatar' => $avatarPath])) {
+                // Nếu cập nhật DB thất bại, xóa file mới upload
+                if (file_exists($uploadPath)) {
+                    unlink($uploadPath);
+                }
+                throw new Exception('Không thể cập nhật avatar trong database');
+            }
+
+            // Xóa avatar cũ nếu tồn tại và không phải avatar mặc định
+            if ($oldAvatarPath && 
+                $oldAvatarPath !== '/assets/images/default-avatar.png' && 
+                file_exists(ROOT_PATH . '/public' . $oldAvatarPath)) {
+                unlink(ROOT_PATH . '/public' . $oldAvatarPath);
+            }
 
             // Cập nhật session
-            $_SESSION['avatar'] = $data['avatar'];
+            $_SESSION['user'] = array_merge($_SESSION['user'] ?? [], ['avatar' => $avatarPath]);
 
-            $this->json([
+            echo json_encode([
                 'success' => true,
                 'message' => 'Cập nhật avatar thành công',
-                'avatar' => $data['avatar']
+                'avatar' => $avatarPath
             ]);
 
         } catch (Exception $e) {
-            $this->error($e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 

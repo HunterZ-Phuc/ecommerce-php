@@ -253,13 +253,21 @@ class Product extends BaseModel
     public function getLowStockCount($threshold = 10)
     {
         try {
-            $sql = "SELECT COUNT(*) FROM {$this->table} WHERE stock > 0 AND stock <= :threshold";
+            // Sửa lại query để đếm sản phẩm có ít nhất một biến thể dưới ngưỡng tồn kho
+            $sql = "SELECT COUNT(DISTINCT p.id) 
+                    FROM products p
+                    JOIN product_variants pv ON p.id = pv.productId
+                    WHERE pv.quantity > 0 
+                    AND pv.quantity <= :threshold
+                    AND p.status = 'ON_SALE'";
+                    
             $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':threshold', $threshold, \PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->fetchColumn();
         } catch (PDOException $e) {
-            throw new Exception('Lỗi khi đếm sản phẩm sắp hết hàng: ' . $e->getMessage());
+            error_log("Error getting low stock count: " . $e->getMessage());
+            return 0;
         }
     }
 

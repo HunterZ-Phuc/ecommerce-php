@@ -46,7 +46,7 @@ error_log('Order data: ' . print_r($order ?? 'No order data', true));
                                 <h6>Chi tiết sản phẩm:</h6>
                                 <?php foreach ($order['items'] as $item): ?>
                                     <div class="d-flex border-bottom py-3">
-                                        <img src="<?= htmlspecialchars($item['imageUrl']) ?>" 
+                                        <img src="<?= '/ecommerce-php/public/' . htmlspecialchars($item['imageUrl']) ?>" 
                                              alt="<?= htmlspecialchars($item['productName']) ?>" 
                                              class="img-thumbnail me-3" style="width: 80px; height: 80px; object-fit: cover;">
                                         <div class="flex-grow-1">

@@ -107,7 +107,6 @@ $pageTitle = $title ?? 'Dashboard';
                                     <th>Số lượng còn lại</th>
                                     <th>Giá</th>
                                     <th>Trạng thái</th>
-                                    <th>Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -125,12 +124,6 @@ $pageTitle = $title ?? 'Dashboard';
                                                 <?php else: ?>
                                                     <span class="badge bg-warning text-dark">Tạm ngưng</span>
                                                 <?php endif; ?>
-                                            </td>
-                                            <td>
-                                                <a href="/ecommerce-php/employee/product-management/edit/<?= $product['id'] ?>" 
-                                                   class="btn btn-warning btn-sm">
-                                                    <i class="fas fa-edit"></i> Sửa
-                                                </a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

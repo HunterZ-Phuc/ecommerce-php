@@ -99,7 +99,7 @@ error_log('Selected Variant IDs: ' . print_r($selectedVariantIds, true));
                 <div class="card-body">
                     <?php foreach ($cartItems as $item): ?>
                         <div class="d-flex mb-3">
-                            <img src="<?= htmlspecialchars($item['imageUrl']) ?>" 
+                            <img src="<?= '/ecommerce-php/public/' . htmlspecialchars($item['imageUrl']) ?>" 
                                  alt="<?= htmlspecialchars($item['productName']) ?>" 
                                  class="img-fluid rounded" style="width: 80px;">
                             <div class="ms-3">

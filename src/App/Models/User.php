@@ -150,4 +150,115 @@ class User extends BaseModel
     {
         return preg_match('/^[0-9]{10,11}$/', $phone) === 1;
     }
+
+    public function getTotalCustomers()
+    {
+        try {
+            $sql = "SELECT COUNT(*) FROM {$this->table} WHERE eRole = 'USER'";
+            return $this->db->query($sql)->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Error getting total customers: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    public function getUsersWithStats($search = '', $status = '', $limit = 10, $offset = 0)
+    {
+        try {
+            $sql = "SELECT u.*, 
+                    COUNT(DISTINCT o.id) as totalOrders,
+                    COALESCE(SUM(o.totalAmount), 0) as totalSpent
+                    FROM {$this->table} u
+                    LEFT JOIN orders o ON u.id = o.userId
+                    WHERE u.eRole = 'USER'";
+
+            $params = [];
+
+            if (!empty($search)) {
+                $sql .= " AND (u.fullName LIKE :search 
+                        OR u.email LIKE :search 
+                        OR u.phone LIKE :search)";
+                $params[':search'] = "%$search%";
+            }
+
+            if ($status === 'active') {
+                $sql .= " AND u.isActive = 1";
+            } elseif ($status === 'inactive') {
+                $sql .= " AND u.isActive = 0";
+            }
+
+            $sql .= " GROUP BY u.id
+                      ORDER BY u.createdAt DESC
+                      LIMIT :limit OFFSET :offset";
+
+            $stmt = $this->db->prepare($sql);
+            
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+            
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+            
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting users with stats: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getTotalUsers($search = '', $status = '')
+    {
+        try {
+            $sql = "SELECT COUNT(*) FROM {$this->table} WHERE eRole = 'USER'";
+            $params = [];
+
+            if (!empty($search)) {
+                $sql .= " AND (fullName LIKE :search 
+                        OR email LIKE :search 
+                        OR phone LIKE :search)";
+                $params[':search'] = "%$search%";
+            }
+
+            if ($status === 'active') {
+                $sql .= " AND isActive = 1";
+            } elseif ($status === 'inactive') {
+                $sql .= " AND isActive = 0";
+            }
+
+            $stmt = $this->db->prepare($sql);
+            
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+            
+            $stmt->execute();
+            return $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Error getting total users count: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    public function getAllUsersWithStats()
+    {
+        try {
+            $sql = "SELECT u.*, 
+                    COUNT(DISTINCT o.id) as totalOrders,
+                    COALESCE(SUM(o.totalAmount), 0) as totalSpent
+                    FROM {$this->table} u
+                    LEFT JOIN orders o ON u.id = o.userId
+                    WHERE u.eRole = 'USER'
+                    GROUP BY u.id
+                    ORDER BY u.createdAt DESC";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting all users with stats: " . $e->getMessage());
+            return [];
+        }
+    }
 }

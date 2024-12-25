@@ -7,16 +7,19 @@
             <div class="col-md-3 border-end">
                 <div class="p-4">
                     <div class="d-flex align-items-center mb-4">
-                        <img src="<?= isset($user['avatar']) ? '/ecommerce-php/public' . $user['avatar'] : 'https://placehold.co/100x100?text=Profile' ?>"
-                            alt="User Profile" class="rounded-circle me-3"
+                        <img src="<?= '/ecommerce-php/public' . ($_SESSION['user']['avatar'] ?? '/assets/images/default-avatar.png') ?>"
+                            alt="User Profile" 
+                            class="rounded-circle me-3 user-avatar"
                             style="width: 60px; height: 60px; object-fit: cover;" />
                         <div>
-                            <div class="fs-5 fw-semibold"><?= htmlspecialchars($user['username'] ?? 'Người dùng') ?>
+                            <div class="fs-5 fw-semibold">
+                                <?= htmlspecialchars($_SESSION['user']['username'] ?? 'Người dùng') ?>
                             </div>
                             <small class="text-muted">
                                 <i class="bi bi-pencil-square"></i>
-                                <a href="/ecommerce-php/user/profile" class="text-decoration-none text-muted">Sửa hồ
-                                    sơ</a>
+                                <a href="/ecommerce-php/user/profile" class="text-decoration-none text-muted">
+                                    Sửa hồ sơ
+                                </a>
                             </small>
                         </div>
                     </div>
@@ -40,7 +43,7 @@
 
                         <div class="nav-item mb-2">
                             <span class="d-block text-secondary fw-bold mb-2">Đơn hàng</span>
-                            <a href="/ecommerce-php/user/orders"
+                            <a href="/ecommerce-php/order/history"
                                 class="nav-link <?= $active_page == 'orders' ? 'active' : '' ?>">
                                 <i class="bi bi-bag me-2"></i>Đơn Mua
                             </a>

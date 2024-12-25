@@ -27,13 +27,7 @@
                         <input type="email" 
                                name="email" 
                                value="<?= isset($email) ? htmlspecialchars($email) : '' ?>" 
-                               readonly />
-                        <button type="button" 
-                                class="btn btn-outline-primary" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#changeEmailModal">
-                            Thay đổi
-                        </button>
+                />
                     </div>
                 </div>
 
@@ -42,14 +36,7 @@
                     <div class="input-group">
                         <input type="tel" 
                                name="phone" 
-                               value="<?= isset($phone) ? htmlspecialchars($phone) : '' ?>" 
-                               readonly />
-                        <button type="button" 
-                                class="btn btn-outline-primary"
-                                data-bs-toggle="modal" 
-                                data-bs-target="#changePhoneModal">
-                            Thay đổi
-                        </button>
+                               value="<?= isset($phone) ? htmlspecialchars($phone) : '' ?>" />
                     </div>
                 </div>
 
@@ -89,9 +76,9 @@
         <div class="col-md-4">
             <div class="text-center">
                 <div class="mb-3">
-                    <img src="<?= isset($user['avatar']) ? '/ecommerce-php/public' . $user['avatar'] : 'https://placehold.co/200x200?text=Avatar' ?>" 
+                    <img src="<?= '/ecommerce-php/public' . ($_SESSION['user']['avatar'] ?? '/assets/images/default-avatar.png') ?>" 
                          alt="Avatar" 
-                         class="rounded-circle img-thumbnail"
+                         class="rounded-circle img-thumbnail user-avatar"
                          style="width: 200px; height: 200px; object-fit: cover;" />
                 </div>
                 
@@ -107,8 +94,10 @@
                             onclick="document.getElementById('avatarInput').click()">
                         Chọn ảnh
                     </button>
+                    <div id="avatarPreview" class="text-center">
+                        <!-- Preview ảnh sẽ được thêm vào đây bằng JavaScript -->
+                    </div>
                     <div class="text-muted small">
-                        <p class="mb-1">Dung lượng file tối đa 1 MB</p>
                         <p class="mb-0">Định dạng: JPEG, PNG</p>
                     </div>
                 </form>
@@ -120,6 +109,13 @@
 <script>
 document.getElementById('avatarInput').addEventListener('change', function() {
     if (this.files && this.files[0]) {
+        // Kiểm tra định dạng file
+        if (!['image/jpeg', 'image/png'].includes(this.files[0].type)) {
+            alert('Chỉ chấp nhận file JPG hoặc PNG');
+            this.value = '';
+            return;
+        }
+
         const form = document.getElementById('avatarForm');
         const formData = new FormData(form);
         
@@ -130,7 +126,36 @@ document.getElementById('avatarInput').addEventListener('change', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                window.location.reload();
+                // Cập nhật tất cả các ảnh avatar trên trang
+                const newAvatarUrl = '/ecommerce-php/public' + data.avatar;
+                
+                // Cập nhật ảnh trong profile
+                document.querySelector('.rounded-circle').src = newAvatarUrl;
+                
+                // Cập nhật ảnh trong header
+                document.querySelector('#userDropdown img').src = newAvatarUrl;
+                
+                // Cập nhật preview ảnh trong form upload
+                const previewImg = document.createElement('img');
+                previewImg.src = newAvatarUrl;
+                previewImg.style.width = '100px';
+                previewImg.style.height = '100px';
+                previewImg.style.objectFit = 'cover';
+                previewImg.style.borderRadius = '50%';
+                previewImg.style.marginTop = '10px';
+                
+                const previewContainer = document.querySelector('#avatarPreview');
+                if (previewContainer) {
+                    previewContainer.innerHTML = '';
+                    previewContainer.appendChild(previewImg);
+                } else {
+                    const newPreviewContainer = document.createElement('div');
+                    newPreviewContainer.id = 'avatarPreview';
+                    document.getElementById('avatarForm').appendChild(newPreviewContainer);
+                    newPreviewContainer.appendChild(previewImg);
+                }
+                
+                alert('Cập nhật avatar thành công!');
             } else {
                 alert(data.error || 'Có lỗi xảy ra khi cập nhật ảnh đại diện');
             }
@@ -138,6 +163,9 @@ document.getElementById('avatarInput').addEventListener('change', function() {
         .catch(error => {
             console.error('Error:', error);
             alert('Có lỗi xảy ra khi cập nhật ảnh đại diện');
+        })
+        .finally(() => {
+            this.value = ''; // Reset input file
         });
     }
 });

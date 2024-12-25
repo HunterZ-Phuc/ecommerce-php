@@ -42,13 +42,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/ecommerce-php/employee/order-management">
+                        <a class="nav-link text-white" href="/ecommerce-php/employee/orders">
                             <i class="bi bi-people"></i> Quản lý đơn hàng
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="/ecommerce-php/employee/product-management">
-                            <i class="bi bi-people"></i> Quản lý sản phẩm
                         </a>
                     </li>
                     <li class="nav-item">

@@ -73,7 +73,7 @@ class OrderController extends BaseController
         // 5. Lấy địa chỉ của user
         $addresses = $this->addressModel->findByUserId($userId);
         if (empty($addresses)) {
-            $_SESSION['error'] = 'Vui lòng thêm địa chỉ giao hàng';
+            $_SESSION['error'] = 'Vui lòng th��m địa chỉ giao hàng';
             $this->redirect('address/create');
             return;
         }
@@ -313,8 +313,8 @@ class OrderController extends BaseController
             }
 
             // Cập nhật trạng thái thanh toán
-            $this->orderModel->updatePaymentStatus($id, 'PENDING', 'Chờ xác nhận thanh toán');
-            
+
+            $this->orderModel->updateOrderStatus($id, 'PENDING', 'Chờ xác nhận thanh toán', $userId);
             $_SESSION['success'] = 'Xác nhận thanh toán thành công. Chúng tôi sẽ kiểm tra và cập nhật trạng thái đơn hàng của bạn.';
             $this->redirect("order/detail/{$id}");
 
@@ -417,10 +417,18 @@ class OrderController extends BaseController
     {
         try {
             $userId = $this->auth->getUserId();
-            $order = $this->orderModel->getOrderDetails($id);
+            if (!$userId) {
+                $this->redirect('login');
+                return;
+            }
 
-            if (!$order || $order['userId'] !== $userId) {
-                $this->redirect('404');
+            // Lấy thông tin đơn hàng
+            $order = $this->orderModel->getOrderDetails($id);
+            
+            // Kiểm tra đơn hàng tồn tại và thuộc về user hiện tại
+            if (!$order || $order['userId'] != $userId) {
+                $_SESSION['error'] = 'Không tìm thấy đơn hàng';
+                $this->redirect('order/history');
                 return;
             }
 
@@ -434,6 +442,7 @@ class OrderController extends BaseController
                 'title' => 'Chi tiết đơn hàng #' . $id,
                 'order' => $order
             ]);
+
         } catch (Exception $e) {
             $_SESSION['error'] = $e->getMessage();
             $this->redirect('order/history');
@@ -513,6 +522,46 @@ class OrderController extends BaseController
             $this->redirect("order/detail/{$id}");
 
         } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect("order/detail/{$id}");
+        }
+    }
+
+    public function confirmDelivery($id)
+    {
+        try {
+            $this->db->beginTransaction();
+
+            $userId = $this->auth->getUserId();
+            if (!$userId) {
+                error_log("User not logged in");
+                $this->redirect('login');
+                return;
+            }
+
+            $orderId = $id;
+            $status = 'DELIVERED';
+            $note = 'Đã nhận hàng và thanh toán';
+            $userId = $this->auth->getUserId();
+
+            // Cập nhật trạng thái đơn hàng
+            $this->orderModel->updateOrderStatus($orderId, $status, $note, $userId);
+
+            // Lấy thông tin đơn hàng
+            $order = $this->orderModel->getOrderById($orderId);
+            
+            // Nếu là thanh toán COD và đã giao hàng thành công
+            if ($order['paymentMethod'] === 'CASH_ON_DELIVERY') {
+                // Cập nhật trạng thái thanh toán
+                $this->orderModel->updatePaymentStatus($orderId, 'PAID', 'Thanh toán khi nhận hàng');
+            }
+
+            $this->db->commit();
+            $_SESSION['success'] = 'Xác nhận giao hàng thành công';
+            $this->redirect("order/detail/{$id}");
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
             $_SESSION['error'] = $e->getMessage();
             $this->redirect("order/detail/{$id}");
         }

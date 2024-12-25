@@ -105,17 +105,17 @@ CREATE TABLE products (
   `description` text NOT NULL DEFAULT '',
   `origin` varchar(255) NOT NULL,
   `category` enum(
-    'FRUITS',
-    'VEGETABLES',
-    'GRAINS',
-    'OTHERS'
+    'FRUITS',       -- Trái cây
+    'VEGETABLES',   -- Rau củ
+    'GRAINS',       -- Ngũ cốc
+    'OTHERS'        -- Các loại khác
   ) NOT NULL,
   `salePercent` int DEFAULT 0 CHECK (salePercent >= 0 AND salePercent <= 100),
   `sold` int(11) NOT NULL DEFAULT 0 CHECK (sold >= 0),
   `status` enum(
-    'ON_SALE',
-    'SUSPENDED',
-    'OUT_OF_STOCK'
+    'ON_SALE',      -- Đang bán
+    'SUSPENDED',  -- Tạm ngưng
+    'OUT_OF_STOCK'  -- Hết hàng
   ) NOT NULL DEFAULT 'ON_SALE',
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `updatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -205,15 +205,16 @@ CREATE TABLE orders (
   `paymentMethod` enum('CASH_ON_DELIVERY', 'QR_TRANSFER') NOT NULL,
   `paymentStatus` enum('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
   `orderStatus` enum(
-    'PENDING',
-    'PROCESSING',
-    'CONFIRMED',
-    'READY_FOR_SHIPPING',
-    'SHIPPING',
-    'SHIPPED',
-    'DELIVERED',
-    'CANCELLED',
-    'RETURNED'
+    'PENDING',                -- Chờ xử lý
+    'PROCESSING',             -- Đang xử lý
+    'CONFIRMED',              -- Đã xác nhận
+    'READY_FOR_SHIPPING',     -- Sẵn sàng giao hàng
+    'SHIPPING',               -- Đang giao hàng
+    'DELIVERED',              -- Đã giao hàng
+    'RETURN_REQUEST',         -- Yêu cầu hoàn trả
+    'RETURN_APPROVED',        -- Đã được phép hoàn trả
+    'RETURNED',               -- Đã hoàn trả
+    'CANCELLED'               -- Đã hủy
   ) NOT NULL DEFAULT 'PENDING',
   `note` text DEFAULT NULL,
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -309,18 +310,7 @@ DO
   WHERE isUsed = true 
   OR expiredAt < CURRENT_TIMESTAMP;
 
-/* 
--- Các câu lệnh cập nhật mẫu (không thực thi)
-UPDATE product_variants 
-SET sold = sold + [quantity] 
-WHERE id = [variantId];
-
-UPDATE products 
-SET sold = sold + [quantity] 
-WHERE id = [productId];
-*/
-
--- Tiếp tục với các phần còn lại...
+-- Các câu lệnh trigger
 
 DELIMITER //
 CREATE TRIGGER after_order_completed
@@ -328,11 +318,6 @@ AFTER UPDATE ON orders
 FOR EACH ROW
 BEGIN
     IF NEW.orderStatus = 'DELIVERED' AND OLD.orderStatus != 'DELIVERED' THEN
-        UPDATE product_variants pv
-        INNER JOIN order_items oi ON pv.id = oi.variantId
-        SET pv.sold = pv.sold + oi.quantity
-        WHERE oi.orderId = NEW.id;
-        
         UPDATE products p
         INNER JOIN product_variants pv ON p.id = pv.productId
         INNER JOIN order_items oi ON pv.id = oi.variantId
@@ -485,4 +470,11 @@ DELIMITER ;
 -- Tạo tài khoản mặc định cho Admin
 INSERT INTO admins (username, email, password, eRole) VALUES
 ('admin', 'admin@gmail.com', '$2y$10$41A7b7y96Icmxa/CbhAAuezZYbsd3A7.YY51zIxbRWpT..a.EYnB.', 'ADMIN');
--- Password: 123456
+  -- Username: admin
+  -- Password: 123456
+
+-- Tạo tài khoản mặc định cho Employee
+INSERT INTO employees (username, email, password, fullName, phone, address, salary, eRole) VALUES
+('nhanvien1', 'nhanvien1@gmail.com', '$2y$10$41A7b7y96Icmxa/CbhAAuezZYbsd3A7.YY51zIxbRWpT..a.EYnB.', 'Nguyễn Văn A', '0378627111', '123 Đường ABC, phường 1, TP.Sơn La', 10000000, 'EMPLOYEE');
+  -- Username: nhanvien1
+  -- Password: 123456

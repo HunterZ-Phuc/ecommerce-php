@@ -28,9 +28,10 @@ $router->add('/order/create', ['controller' => 'Order', 'action' => 'create']);
 $router->add('/order/success/{id:\d+}', ['controller' => 'Order', 'action' => 'success']);
 $router->add('/order/cancel/{id:\d+}', ['controller' => 'Order', 'action' => 'cancel']);
 $router->add('/order/detail/{id:\d+}', ['controller' => 'Order', 'action' => 'detail']);
-$router->add('/order/history[?page=\d+]?', ['controller' => 'Order', 'action' => 'history']);
+$router->add('/order/history[/]?[?page=\d+]?', ['controller' => 'Order', 'action' => 'history']);
 $router->add('/order/payment/{id:\d+}', ['controller' => 'Order', 'action' => 'payment']);
 $router->add('/order/confirmPayment/{id:\d+}', ['controller' => 'Order', 'action' => 'confirmPayment']);
+$router->add('/order/confirm-delivery/{id:\d+}', ['controller' => 'Order', 'action' => 'confirmDelivery']);
 
 // Payment routes
 $router->add('/payment/banking/{id:\d+}', ['controller' => 'Payment', 'action' => 'banking']);

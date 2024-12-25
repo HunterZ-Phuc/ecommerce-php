@@ -1,3 +1,4 @@
+<!-- Sửa 3 -->
 <div class="container my-5">
     <div class="row">
         <div class="col-md-8">
@@ -22,7 +23,7 @@
                         <h6>Sản phẩm</h6>
                         <?php foreach ($order['items'] as $item): ?>
                             <div class="d-flex mb-3">
-                                <img src="<?= htmlspecialchars($item['imageUrl']) ?>" 
+                                <img src="<?= '/ecommerce-php/public/' . htmlspecialchars($item['imageUrl']) ?>" 
                                      alt="<?= htmlspecialchars($item['productName']) ?>" 
                                      class="img-thumbnail me-3" style="width: 100px;">
                                 <div>
@@ -76,17 +77,30 @@
                         <strong>Tổng cộng:</strong>
                         <strong><?= number_format($order['totalAmount']) ?>đ</strong>
                     </div>
+                    <?php if (in_array($order['orderStatus'], ['PENDING', 'PROCESSING', 'CONFIRMED'])): ?>
+                        <form action="/ecommerce-php/order/cancel/<?= $order['id'] ?>" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Bạn có chắc muốn hủy đơn hàng này?')">
+                                Hủy đơn hàng
+                            </button>
+                        </form>
+                    <?php endif; ?>
 
-                    <?php if (isset($order['status']) && ($order['status'] === 'PENDING' || $order['status'] === 'PROCESSING')): ?>
-                        <div class="mt-4">
-                            <form action="/ecommerce-php/order/cancel/<?= $order['id'] ?>" 
-                                  method="POST" class="d-inline">
-                                <button type="submit" class="btn btn-danger" 
-                                        onclick="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')">
-                                    Hủy đơn hàng
-                                </button>
-                            </form>
-                        </div>
+                    <?php if ($order['orderStatus'] === 'SHIPPING'): ?>
+                        <form action="/ecommerce-php/order/confirm-delivery/<?= $order['id'] ?>" method="POST" class="d-inline">
+                            <input type="hidden" name="orderId" value="<?= $order['id'] ?>">
+                            <input type="hidden" name="status" value="DELIVERED">
+                            <button type="submit" class="btn btn-success" 
+                                    onclick="return confirm('Xác nhận đã nhận hàng và thanh toán?')">
+                                <i class="bi bi-check-circle"></i> Xác nhận đã nhận hàng và thanh toán
+                            </button>
+                        </form>
+                    <?php endif; ?>
+
+                    <?php if ($order['orderStatus'] === 'SHIPPING'): ?>
+                        <button type="button" class="btn btn-warning" 
+                                data-bs-toggle="modal" data-bs-target="#returnModal">
+                            Yêu cầu hoàn trả
+                        </button>
                     <?php endif; ?>
                 </div>
             </div>
@@ -153,3 +167,32 @@
     background: #007bff;
 }
 </style>
+
+<!-- Modal yêu cầu hoàn trả -->
+<div class="modal fade" id="returnModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/ecommerce-php/order/return/<?= $order['id'] ?>" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">Yêu cầu hoàn trả</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Lý do hoàn trả</label>
+                        <textarea name="reason" class="form-control" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-warning">Gửi yêu cầu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<?php
+error_log("Order Status: " . $order['orderStatus']);
+error_log("Payment Method: " . $order['paymentMethod']);
+?>
