@@ -146,7 +146,7 @@ CREATE TABLE variant_values (
 CREATE TABLE product_variants (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `productId` int(11) NOT NULL,
-  `sku` varchar(100) DEFAULT NULL,
+  `sku` varchar(100) DEFAULT NULL,  -- Mã riêng của sản phẩm
   `price` decimal(15,2) NOT NULL CHECK (price > 0),
   `quantity` int(11) NOT NULL CHECK (quantity >= 0),
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -245,8 +245,8 @@ CREATE TABLE order_items (
     quantity INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (orderId) REFERENCES orders(id),
-    FOREIGN KEY (variantId) REFERENCES product_variants(id)
+    FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (variantId) REFERENCES product_variants(id) ON DELETE CASCADE
 );
 
 -- Bảng lịch sử đơn hàng
@@ -332,14 +332,20 @@ CREATE OR REPLACE TRIGGER before_insert_product_variant
 BEFORE INSERT ON product_variants
 FOR EACH ROW
 BEGIN
-    DECLARE product_code VARCHAR(50);
+    DECLARE product_code VARCHAR(10);
+    DECLARE variant_count INT;
     
-    -- Chỉ tạo product_code
+    -- Lấy mã sản phẩm dạng SP001
     SELECT CONCAT('SP', LPAD(id, 3, '0')) INTO product_code
     FROM products WHERE id = NEW.productId;
     
-    -- Tạo SKU tạm thời
-    SET NEW.sku = CONCAT(product_code, '-', UUID());
+    -- Đếm số biến thể hiện có của sản phẩm
+    SELECT COUNT(*) + 1 INTO variant_count
+    FROM product_variants 
+    WHERE productId = NEW.productId;
+    
+    -- Tạo SKU theo format: SP001-V01
+    SET NEW.sku = CONCAT(product_code, '-V', LPAD(variant_count, 2, '0'));
 END //
 DELIMITER ;
 

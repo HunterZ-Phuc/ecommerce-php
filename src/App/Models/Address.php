@@ -10,32 +10,6 @@ class Address extends BaseModel
 {
     protected $table = 'addresses';
 
-    public function getAllByUserId($userId)
-    {
-        try {
-            $sql = "SELECT * FROM {$this->table} WHERE userId = :userId ORDER BY isDefault DESC";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute(['userId' => $userId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Error getting addresses: " . $e->getMessage());
-            return [];
-        }
-    }
-
-    public function getById($id, $userId)
-    {
-        try {
-            $sql = "SELECT * FROM {$this->table} WHERE id = :id AND userId = :userId";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute(['id' => $id, 'userId' => $userId]);
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Error getting address by id: " . $e->getMessage());
-            return false;
-        }
-    }
-
     public function create($data)
     {
         try {
@@ -102,50 +76,6 @@ class Address extends BaseModel
         }
     }
 
-    public function delete($id)
-    {
-        try {
-            // Lấy userId từ địa chỉ hiện tại
-            $address = $this->findById($id);
-            if (!$address) {
-                throw new Exception('Địa chỉ không tồn tại');
-            }
-
-            // Kiểm tra xem có phải địa chỉ mặc định không
-            if ($address['isDefault']) {
-                throw new Exception('Không thể xóa địa chỉ mặc định');
-            }
-
-            return parent::delete($id);
-        } catch (PDOException $e) {
-            error_log("Error deleting address: " . $e->getMessage());
-            throw new Exception("Không thể xóa địa chỉ. Vui lòng thử lại sau.");
-        }
-    }
-
-    public function deleteWithUserId($id, $userId)
-    {
-        try {
-            // Kiểm tra xem địa chỉ có thuộc về user không
-            $address = $this->getById($id, $userId);
-            if (!$address) {
-                throw new Exception('Địa chỉ không tồn tại hoặc không thuộc về người dùng này');
-            }
-
-            // Kiểm tra xem có phải địa chỉ mặc định không
-            if ($this->isDefault($id, $userId)) {
-                throw new Exception('Không thể xóa địa chỉ mặc định');
-            }
-
-            $sql = "DELETE FROM {$this->table} WHERE id = :id AND userId = :userId";
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute(['id' => $id, 'userId' => $userId]);
-        } catch (PDOException $e) {
-            error_log("Error deleting address: " . $e->getMessage());
-            throw new Exception("Không thể xóa địa chỉ. Vui lòng thử lại sau.");
-        }
-    }
-
     public function setDefault($id, $userId)
     {
         try {
@@ -187,16 +117,29 @@ class Address extends BaseModel
         }
     }
 
-    public function countByUserId($userId)
+    public function getById($id, $userId)
     {
         try {
-            $sql = "SELECT COUNT(*) FROM {$this->table} WHERE userId = :userId";
+            $sql = "SELECT * FROM {$this->table} WHERE id = :id AND userId = :userId";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(['id' => $id, 'userId' => $userId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting address by id: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getAllByUserId($userId)
+    {
+        try {
+            $sql = "SELECT * FROM {$this->table} WHERE userId = :userId ORDER BY isDefault DESC";
             $stmt = $this->db->prepare($sql);
             $stmt->execute(['userId' => $userId]);
-            return (int) $stmt->fetchColumn();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            error_log("Error counting user addresses: " . $e->getMessage());
-            return 0;
+            error_log("Error getting addresses: " . $e->getMessage());
+            return [];
         }
     }
 
@@ -206,5 +149,49 @@ class Address extends BaseModel
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['userId' => $userId]);
         return $stmt->fetchAll();
+    }
+
+    public function deleteWithUserId($id, $userId)
+    {
+        try {
+            // Kiểm tra xem địa chỉ có thuộc về user không
+            $address = $this->getById($id, $userId);
+            if (!$address) {
+                throw new Exception('Địa chỉ không tồn tại hoặc không thuộc về người dùng này');
+            }
+
+            // Kiểm tra xem có phải địa chỉ mặc định không
+            if ($this->isDefault($id, $userId)) {
+                throw new Exception('Không thể xóa địa chỉ mặc định');
+            }
+
+            $sql = "DELETE FROM {$this->table} WHERE id = :id AND userId = :userId";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute(['id' => $id, 'userId' => $userId]);
+        } catch (PDOException $e) {
+            error_log("Error deleting address: " . $e->getMessage());
+            throw new Exception("Không thể xóa địa chỉ. Vui lòng thử lại sau.");
+        }
+    }
+
+    public function delete($id)
+    {
+        try {
+            // Lấy userId từ địa chỉ hiện tại
+            $address = $this->findById($id);
+            if (!$address) {
+                throw new Exception('Địa chỉ không tồn tại');
+            }
+
+            // Kiểm tra xem có phải địa chỉ mặc định không
+            if ($address['isDefault']) {
+                throw new Exception('Không thể xóa địa chỉ mặc định');
+            }
+
+            return parent::delete($id);
+        } catch (PDOException $e) {
+            error_log("Error deleting address: " . $e->getMessage());
+            throw new Exception("Không thể xóa địa chỉ. Vui lòng thử lại sau.");
+        }
     }
 }

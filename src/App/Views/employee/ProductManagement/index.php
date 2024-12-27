@@ -25,6 +25,35 @@
     </button>
 </div>
 
+<!-- Thêm form tìm kiếm -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <form action="" method="GET" class="d-flex gap-2">
+            <div class="input-group">
+                <input type="text" 
+                       name="search" 
+                       class="form-control" 
+                       placeholder="Tìm kiếm sản phẩm..." 
+                       value="<?= htmlspecialchars($search ?? '') ?>">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Tìm kiếm
+                </button>
+            </div>
+            <?php if (!empty($search)): ?>
+                <a href="?page=1" class="btn btn-outline-secondary d-flex align-items-center">
+                    <i class="fas fa-undo me-1"></i> Đặt lại
+                </a>
+            <?php endif; ?>
+        </form>
+    </div>
+</div>
+
+<style>
+.input-group {
+    flex: 1;
+}
+</style>
+
 <table class="table table-striped">
     <thead>
         <tr>
@@ -88,6 +117,37 @@
         <?php endforeach; ?>
     </tbody>
 </table>
+
+<!-- Thêm phân trang -->
+<?php if ($totalPages > 1): ?>
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        <?php if ($currentPage > 1): ?>
+            <li class="page-item">
+                <a class="page-link" href="?page=<?= $currentPage - 1 ?>&search=<?= urlencode($search) ?>">
+                    Trước
+                </a>
+            </li>
+        <?php endif; ?>
+
+        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <li class="page-item <?= $i === $currentPage ? 'active' : '' ?>">
+                <a class="page-link" href="?page=<?= $i ?>&search=<?= urlencode($search) ?>">
+                    <?= $i ?>
+                </a>
+            </li>
+        <?php endfor; ?>
+
+        <?php if ($currentPage < $totalPages): ?>
+            <li class="page-item">
+                <a class="page-link" href="?page=<?= $currentPage + 1 ?>&search=<?= urlencode($search) ?>">
+                    Sau
+                </a>
+            </li>
+        <?php endif; ?>
+    </ul>
+</nav>
+<?php endif; ?>
 
 <?php
 require_once ROOT_PATH . '/src/App/Views/employee/ProductManagement/create.php';

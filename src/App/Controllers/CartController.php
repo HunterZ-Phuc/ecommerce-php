@@ -19,6 +19,7 @@ class CartController extends BaseController
         $this->variantModel = new ProductVariant();
     }
 
+    // View giỏ hàng
     public function index()
     {
         $userId = $this->auth->getUserId();
@@ -32,6 +33,7 @@ class CartController extends BaseController
         ]);
     }
 
+    // Thêm sản phẩm vào giỏ hàng
     public function add()
     {
         try {
@@ -72,6 +74,7 @@ class CartController extends BaseController
         }
     }
 
+    // Cập nhật số lượng sản phẩm trong giỏ hàng
     public function update()
     {
         try {
@@ -112,6 +115,7 @@ class CartController extends BaseController
         }
     }
 
+    // Xóa sản phẩm khỏi giỏ hàng
     public function remove()
     {
         try {
@@ -145,6 +149,7 @@ class CartController extends BaseController
         }
     }
 
+    // Xóa toàn bộ sản phẩm trong giỏ hàng
     public function clear()
     {
         try {
@@ -168,6 +173,7 @@ class CartController extends BaseController
         }
     }
 
+    // Chọn sản phẩm để đặt hàng
     public function processSelectedItems()
     {
         try {

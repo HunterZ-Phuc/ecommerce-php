@@ -248,13 +248,13 @@ class AuthController extends BaseController
             throw new Exception('Xác nhận mật khẩu không khớp');
         }
 
-        // Validate date of birth
+        // Validate ngày sinh
         $dob = strtotime($data['dateOfBirth']);
         if (!$dob) {
             throw new Exception('Ngày sinh không hợp lệ');
         }
 
-        // Validate sex
+        // Validate giới tính
         if (!in_array($data['sex'], ['Male', 'Female', 'Other'])) {
             throw new Exception('Giới tính không hợp lệ');
         }

@@ -5,6 +5,38 @@ class Cart extends BaseModel
 {
     protected $table = 'carts';
 
+       // Thêm sản phẩm vào giỏ hàng
+       public function addToCart($userId, $variantId, $quantity)
+       {
+           // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
+           $sql = "SELECT * FROM {$this->table} WHERE userId = :userId AND variantId = :variantId";
+           $stmt = $this->db->prepare($sql);
+           $stmt->execute([
+               'userId' => $userId,
+               'variantId' => $variantId
+           ]);
+           $existingItem = $stmt->fetch();
+   
+           if ($existingItem) {
+               // Nếu đã có, cập nhật số lượng
+               $sql = "UPDATE {$this->table} 
+                      SET quantity = quantity + :quantity 
+                      WHERE userId = :userId AND variantId = :variantId";
+           } else {
+               // Nếu chưa có, thêm mới
+               $sql = "INSERT INTO {$this->table} (userId, variantId, quantity) 
+                      VALUES (:userId, :variantId, :quantity)";
+           }
+   
+           $stmt = $this->db->prepare($sql);
+           return $stmt->execute([
+               'userId' => $userId,
+               'variantId' => $variantId,
+               'quantity' => $quantity
+           ]);
+       }
+       
+    // Lấy danh sách sản phẩm trong giỏ hàng
     public function getCartItems($userId)
     {
         $sql = "SELECT c.*, 
@@ -64,36 +96,7 @@ class Cart extends BaseModel
         return array_values($cartItems);
     }
 
-    public function addToCart($userId, $variantId, $quantity)
-    {
-        // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
-        $sql = "SELECT * FROM {$this->table} WHERE userId = :userId AND variantId = :variantId";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            'userId' => $userId,
-            'variantId' => $variantId
-        ]);
-        $existingItem = $stmt->fetch();
-
-        if ($existingItem) {
-            // Nếu đã có, cập nhật số lượng
-            $sql = "UPDATE {$this->table} 
-                   SET quantity = quantity + :quantity 
-                   WHERE userId = :userId AND variantId = :variantId";
-        } else {
-            // Nếu chưa có, thêm mới
-            $sql = "INSERT INTO {$this->table} (userId, variantId, quantity) 
-                   VALUES (:userId, :variantId, :quantity)";
-        }
-
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
-            'userId' => $userId,
-            'variantId' => $variantId,
-            'quantity' => $quantity
-        ]);
-    }
-
+    // Cập nhật số lượng sản phẩm trong giỏ hàng
     public function updateQuantity($userId, $variantId, $quantity)
     {
         $sql = "UPDATE {$this->table} 
@@ -108,6 +111,48 @@ class Cart extends BaseModel
         ]);
     }
 
+     // Tính tổng giá trị của giỏ hàng
+     public function getCartTotal($userId)
+     {
+         $sql = "SELECT SUM(pv.price * c.quantity) as total
+                 FROM {$this->table} c
+                 JOIN product_variants pv ON c.variantId = pv.id
+                 WHERE c.userId = :userId";
+         
+         $stmt = $this->db->prepare($sql);
+         $stmt->execute(['userId' => $userId]);
+         return $stmt->fetch()['total'] ?? 0;
+     }
+ 
+     // Lấy danh sách sản phẩm đã chọn trong giỏ hàng
+     public function getSelectedCartItems($userId, $variantIds)
+     {
+         $placeholders = str_repeat('?,', count($variantIds) - 1) . '?';
+         
+         $sql = "SELECT c.*, 
+                p.id as productId,
+                p.productName,
+                p.salePercent,
+                pv.price as originalPrice,
+                pv.quantity as stockQuantity,
+                CASE 
+                    WHEN p.salePercent > 0 THEN pv.price * (1 - p.salePercent/100)
+                    ELSE pv.price 
+                END as finalPrice,
+                pi.imageUrl
+                FROM carts c
+                JOIN product_variants pv ON c.variantId = pv.id
+                JOIN products p ON pv.productId = p.id
+                LEFT JOIN product_images pi ON pv.id = pi.variantId
+                WHERE c.userId = ? AND c.variantId IN ($placeholders)";
+ 
+         $stmt = $this->db->prepare($sql);
+         $params = array_merge([$userId], $variantIds);
+         $stmt->execute($params);
+         return $stmt->fetchAll();
+     }
+
+    // Xóa sản phẩm khỏi giỏ hàng
     public function removeFromCart($userId, $variantId)
     {
         $sql = "DELETE FROM {$this->table} 
@@ -120,49 +165,11 @@ class Cart extends BaseModel
         ]);
     }
 
+    // Xóa toàn bộ giỏ hàng
     public function clearCart($userId)
     {
         $sql = "DELETE FROM {$this->table} WHERE userId = :userId";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['userId' => $userId]);
-    }
-
-    public function getCartTotal($userId)
-    {
-        $sql = "SELECT SUM(pv.price * c.quantity) as total
-                FROM {$this->table} c
-                JOIN product_variants pv ON c.variantId = pv.id
-                WHERE c.userId = :userId";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute(['userId' => $userId]);
-        return $stmt->fetch()['total'] ?? 0;
-    }
-
-    public function getSelectedCartItems($userId, $variantIds)
-    {
-        $placeholders = str_repeat('?,', count($variantIds) - 1) . '?';
-        
-        $sql = "SELECT c.*, 
-               p.id as productId,
-               p.productName,
-               p.salePercent,
-               pv.price as originalPrice,
-               pv.quantity as stockQuantity,
-               CASE 
-                   WHEN p.salePercent > 0 THEN pv.price * (1 - p.salePercent/100)
-                   ELSE pv.price 
-               END as finalPrice,
-               pi.imageUrl
-               FROM carts c
-               JOIN product_variants pv ON c.variantId = pv.id
-               JOIN products p ON pv.productId = p.id
-               LEFT JOIN product_images pi ON pv.id = pi.variantId
-               WHERE c.userId = ? AND c.variantId IN ($placeholders)";
-
-        $stmt = $this->db->prepare($sql);
-        $params = array_merge([$userId], $variantIds);
-        $stmt->execute($params);
-        return $stmt->fetchAll();
     }
 } 

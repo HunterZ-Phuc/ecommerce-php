@@ -9,53 +9,15 @@ class User extends BaseModel
 {
     protected $table = 'users';
 
-    public function findByUsername($username)
-    {
-        try {
-            $sql = "SELECT * FROM {$this->table} WHERE username = :username";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute(['username' => $username]);
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Error finding user by username: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    public function findByEmail($email)
-    {
-        try {
-            $sql = "SELECT * FROM {$this->table} WHERE email = :email";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute(['email' => $email]);
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Error finding user by email: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    public function findByPhone($phone)
-    {
-        try {
-            $sql = "SELECT * FROM {$this->table} WHERE phone = :phone";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute(['phone' => $phone]);
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Error finding user by phone: " . $e->getMessage());
-            return false;
-        }
-    }
-
+    // Tạo tài khoản người dùng
     public function create($data)
     {
         try {
             // Đảm bảo các trường bắt buộc
             $requiredFields = ['username', 'fullName', 'dateOfBirth', 'sex', 'phone', 'email', 'password'];
             
-            // Xóa role khỏi required fields và set mặc định
-            $data['eRole'] = 'USER'; // Sửa từ 'role' thành 'eRole' để khớp với tên cột trong DB
+            // Set role mặc định
+            $data['eRole'] = 'USER';
             
             foreach ($requiredFields as $field) {
                 if (!isset($data[$field])) {
@@ -86,6 +48,7 @@ class User extends BaseModel
         }
     }
 
+    // Cập nhật thông tin người dùng
     public function update($id, $data)
     {
         try {
@@ -99,6 +62,49 @@ class User extends BaseModel
         }
     }
 
+    // Lấy người dùng theo username
+    public function findByUsername($username)
+    {
+        try {
+            $sql = "SELECT * FROM {$this->table} WHERE username = :username";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(['username' => $username]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error finding user by username: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Lấy người dùng theo email
+    public function findByEmail($email)
+    {
+        try {
+            $sql = "SELECT * FROM {$this->table} WHERE email = :email";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(['email' => $email]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error finding user by email: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Lấy người dùng theo số điện thoại
+    public function findByPhone($phone)
+    {
+        try {
+            $sql = "SELECT * FROM {$this->table} WHERE phone = :phone";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(['phone' => $phone]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error finding user by phone: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Cập nhật mật khẩu người dùng
     public function updatePassword($id, $newPassword)
     {
         try {
@@ -115,6 +121,7 @@ class User extends BaseModel
         }
     }
 
+    // Lấy địa chỉ người dùng
     public function getAddresses($userId)
     {
         try {
@@ -128,6 +135,7 @@ class User extends BaseModel
         }
     }
 
+    // Lấy địa chỉ mặc định của người dùng
     public function getDefaultAddress($userId)
     {
         try {
@@ -141,16 +149,7 @@ class User extends BaseModel
         }
     }
 
-    public function validateEmail($email)
-    {
-        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
-    }
-
-    public function validatePhone($phone)
-    {
-        return preg_match('/^[0-9]{10,11}$/', $phone) === 1;
-    }
-
+    // Đếm tổng số khách hàng
     public function getTotalCustomers()
     {
         try {
@@ -162,7 +161,8 @@ class User extends BaseModel
         }
     }
 
-    public function getUsersWithStats($search = '', $status = '', $limit = 10, $offset = 0)
+    // Lấy người dùng có thống kê đơn hàng và tổng số tiền chi tiêu
+    public function getUsersWithStats($search = '', $limit = 10, $offset = 0)
     {
         try {
             $sql = "SELECT u.*, 
@@ -171,26 +171,18 @@ class User extends BaseModel
                     FROM {$this->table} u
                     LEFT JOIN orders o ON u.id = o.userId
                     WHERE u.eRole = 'USER'";
-
+            
             $params = [];
-
+            
             if (!empty($search)) {
-                $sql .= " AND (u.fullName LIKE :search 
-                        OR u.email LIKE :search 
-                        OR u.phone LIKE :search)";
+                $sql .= " AND (u.username LIKE :search OR u.fullName LIKE :search)";
                 $params[':search'] = "%$search%";
             }
-
-            if ($status === 'active') {
-                $sql .= " AND u.isActive = 1";
-            } elseif ($status === 'inactive') {
-                $sql .= " AND u.isActive = 0";
-            }
-
+            
             $sql .= " GROUP BY u.id
-                      ORDER BY u.createdAt DESC
-                      LIMIT :limit OFFSET :offset";
-
+                     ORDER BY u.createdAt DESC
+                     LIMIT :limit OFFSET :offset";
+            
             $stmt = $this->db->prepare($sql);
             
             foreach ($params as $key => $value) {
@@ -208,23 +200,16 @@ class User extends BaseModel
         }
     }
 
-    public function getTotalUsers($search = '', $status = '')
+    // Đếm tổng số người dùng
+    public function getTotalUsers($search = '')
     {
         try {
             $sql = "SELECT COUNT(*) FROM {$this->table} WHERE eRole = 'USER'";
             $params = [];
 
             if (!empty($search)) {
-                $sql .= " AND (fullName LIKE :search 
-                        OR email LIKE :search 
-                        OR phone LIKE :search)";
+                $sql .= " AND (username LIKE :search OR fullName LIKE :search)";
                 $params[':search'] = "%$search%";
-            }
-
-            if ($status === 'active') {
-                $sql .= " AND isActive = 1";
-            } elseif ($status === 'inactive') {
-                $sql .= " AND isActive = 0";
             }
 
             $stmt = $this->db->prepare($sql);
@@ -241,6 +226,7 @@ class User extends BaseModel
         }
     }
 
+    // Lấy tất cả người dùng có thống kê đơn hàng và tổng số tiền chi tiêu
     public function getAllUsersWithStats()
     {
         try {

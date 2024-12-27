@@ -6,6 +6,7 @@ class VariantValue extends BaseModel
 {
     protected $table = 'variant_values';
 
+    // Tạo giá trị cho biến thể
     public function createVariantValue($typeId, $value)
     {
         try {
@@ -22,6 +23,7 @@ class VariantValue extends BaseModel
         }
     }
 
+    // Lấy ID giá trị biến thể theo giá trị
     public function getVariantValueIdByValue($typeId, $value)
     {
         $sql = "SELECT id FROM variant_values WHERE variantTypeId = :type_id AND value = :value";
@@ -33,6 +35,7 @@ class VariantValue extends BaseModel
         return $stmt->fetchColumn();
     }
 
+    // Lấy ID giá trị biến thể theo giá trị
     public function findByTypeAndValue($typeId, $value)
     {
         $sql = "SELECT id FROM variant_values 
@@ -43,6 +46,7 @@ class VariantValue extends BaseModel
         return $result ? $result['id'] : null;
     }
 
+    // Xóa giá trị biến thể theo ID loại biến thể
     public function deleteByTypeId($typeId)
     {
         $sql = "DELETE FROM variant_values WHERE variantTypeId = ?";
@@ -50,6 +54,7 @@ class VariantValue extends BaseModel
         return $stmt->execute([$typeId]);
     }
 
+    // Lấy giá trị biến thể theo ID loại biến thể
     public function findByTypeId($typeId)
     {
         $sql = "SELECT * FROM variant_values WHERE variantTypeId = ?";

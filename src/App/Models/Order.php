@@ -10,6 +10,7 @@ class Order extends BaseModel
 {
     protected $table = 'orders';
 
+    // Tạo đơn hàng
     public function create($data)
     {
         try {
@@ -24,6 +25,7 @@ class Order extends BaseModel
         }
     }
 
+    // Tạo sản phẩm trong đơn hàng
     public function createOrderItem($data)
     {
         try {
@@ -37,6 +39,7 @@ class Order extends BaseModel
         }
     }
 
+    // Tạo thanh toán
     public function createPayment($data)
     {
         try {
@@ -50,22 +53,7 @@ class Order extends BaseModel
         }
     }
 
-    public function updateBankingImage($orderId, $imagePath)
-    {
-        try {
-            $sql = "UPDATE payments SET bankingImage = :imagePath 
-                    WHERE orderId = :orderId";
-            
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
-                'orderId' => $orderId,
-                'imagePath' => $imagePath
-            ]);
-        } catch (PDOException $e) {
-            throw new Exception("Lỗi khi cập nhật ảnh thanh toán: " . $e->getMessage());
-        }
-    }
-    // Sửa 2
+    // Kiểm tra xem trạng thái có thể được cập nhật không
     public function canUpdateStatus($currentStatus, $newStatus) 
     {
         $validTransitions = [
@@ -83,6 +71,7 @@ class Order extends BaseModel
         return in_array($newStatus, $validTransitions[$currentStatus] ?? []);
     }
 
+    // Cập nhật trạng thái đơn hàng
     public function updateOrderStatus($orderId, $status, $note, $updatedBy)
     {
         try {
@@ -104,6 +93,7 @@ class Order extends BaseModel
         }
     }
 
+    // Lấy chi tiết đơn hàng
     public function getOrderDetails($orderId)
     {
         try {
@@ -179,6 +169,7 @@ class Order extends BaseModel
         }
     }
 
+    // Lấy danh sách đơn hàng của người dùng
     public function getOrdersByUser($userId)
     {
         try {
@@ -198,6 +189,7 @@ class Order extends BaseModel
         }
     }
 
+    // Tạo lịch sử đơn hàng
     public function createOrderHistory($data)
     {
         try {
@@ -211,6 +203,7 @@ class Order extends BaseModel
         }
     }
 
+    // Lấy lịch sử đơn hàng
     public function getOrderHistory($orderId)
     {
         try {
@@ -232,6 +225,7 @@ class Order extends BaseModel
         }
     }
 
+    // Cập nhật trạng thái thanh toán
     public function updatePaymentStatus($orderId, $status, $note = '')
     {
         try {
@@ -253,6 +247,7 @@ class Order extends BaseModel
         }
     }
 
+    // Cập nhật QR image
     public function updateQRImage($orderId, $qrImage)
     {
         try {
@@ -269,6 +264,7 @@ class Order extends BaseModel
         }
     }
 
+    // Lấy danh sách đơn hàng của người dùng theo phân trang
     public function getOrdersByUserPaginated($userId, $limit, $offset)
     {
         try {
@@ -305,6 +301,7 @@ class Order extends BaseModel
         }
     }
 
+    // Lấy tất cả đơn hàng
     public function getAllOrders()
     {
         try {
@@ -386,18 +383,18 @@ class Order extends BaseModel
         }
     }
 
+    // Lấy danh sách đơn hàng theo trạng thái
     public function getOrdersByStatus($status)
     {
         try {
             $sql = "SELECT o.*, 
-                    u.fullName as customerName,
+                    u.fullName,
                     u.phone,
+                    a.fullName as receiverName,
+                    a.phoneNumber as receiverPhone,
                     a.address,
-                    a.ward,
-                    a.district,
-                    a.province,
                     p.paymentMethod,
-                    p.status as paymentStatus,
+                    p.paymentStatus,
                     p.amount as paidAmount
                     FROM orders o
                     LEFT JOIN users u ON o.userId = u.id
@@ -415,11 +412,13 @@ class Order extends BaseModel
         }
     }
 
+    // Lấy đơn hàng chờ xử lý
     public function getPendingOrders()
     {
         return $this->getOrdersByStatus('PENDING');
     }
 
+    // Lấy đơn hàng theo ID
     public function getOrderById($id)
     {
         try {
@@ -437,7 +436,7 @@ class Order extends BaseModel
                     GROUP_CONCAT(DISTINCT oh.note) as statusNotes,
                     GROUP_CONCAT(DISTINCT oh.createdAt) as statusDates,
                     GROUP_CONCAT(DISTINCT 
-                        CONCAT(pv.id, ':', oi.quantity, ':', oi.price, ':', prod.productName)
+                        CONCAT(pv.id, ':', oi.quantity, ':', oi.price, ':', prod.productName, ':', IFNULL(pv.sku, 'N/A'))
                         ORDER BY oi.id
                     ) as items
                     FROM orders o
@@ -462,12 +461,13 @@ class Order extends BaseModel
                 if (!empty($order['items'])) {
                     $items = explode(',', $order['items']);
                     foreach ($items as $item) {
-                        list($variantId, $quantity, $price, $productName) = explode(':', $item);
+                        list($variantId, $quantity, $price, $productName, $sku) = explode(':', $item);
                         $itemsArray[] = [
                             'variantId' => $variantId,
                             'quantity' => $quantity,
                             'price' => $price,
-                            'productName' => $productName
+                            'productName' => $productName,
+                            'sku' => $sku
                         ];
                     }
                 }
@@ -497,6 +497,7 @@ class Order extends BaseModel
         }
     }
 
+    // Yêu cầu trả hàng
     public function requestReturn($orderId, $reason)
     {
         try {
@@ -523,6 +524,7 @@ class Order extends BaseModel
         }
     }
 
+    // Lấy tổng số đơn hàng
     public function getTotalOrders()
     {
         try {
@@ -534,6 +536,7 @@ class Order extends BaseModel
         }
     }
 
+    // Lấy tổng doanh thu tháng hiện tại
     public function getCurrentMonthRevenue()
     {
         try {
@@ -549,6 +552,7 @@ class Order extends BaseModel
         }
     }
 
+    // Lấy doanh thu theo tháng
     public function getMonthlyRevenue()
     {
         try {
@@ -573,6 +577,7 @@ class Order extends BaseModel
         }
     }
 
+    // Lấy phân bố trạng thái đơn hàng
     public function getOrderStatusDistribution()
     {
         try {
@@ -594,6 +599,7 @@ class Order extends BaseModel
         }
     }
 
+    // Dịch trạng thái đơn hàng
     private function translateOrderStatus($status)
     {
         $translations = [
@@ -609,7 +615,8 @@ class Order extends BaseModel
         
         return $translations[$status] ?? $status;
     }
-
+    
+    // Lấy thông tin trạng thái đơn hàng
     private function getOrderStatusInfo($status)
     {
         $statusInfo = [

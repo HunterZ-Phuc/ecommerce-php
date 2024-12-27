@@ -2,6 +2,8 @@
 namespace App\Models;
 
 use Core\Database;
+use PDOException;
+use Exception;
 
 class BaseModel
 {
@@ -70,5 +72,20 @@ class BaseModel
         $sql = "DELETE FROM {$this->table} WHERE {$this->primaryKey} = :id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $id]);
+    }
+
+    public function updatePassword($id, $hashedPassword) 
+    {
+        try {
+            $sql = "UPDATE {$this->table} SET password = :password WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                'id' => $id,
+                'password' => $hashedPassword
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error updating password: " . $e->getMessage());
+            throw new Exception("Không thể cập nhật mật khẩu. Vui lòng thử lại sau.");
+        }
     }
 }

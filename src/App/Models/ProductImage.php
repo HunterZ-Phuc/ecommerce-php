@@ -6,6 +6,7 @@ class ProductImage extends BaseModel
 {
     protected $table = 'product_images';
 
+    // Tạo ảnh sản phẩm
     public function create($data)
     {
         try {
@@ -30,6 +31,7 @@ class ProductImage extends BaseModel
         }
     }
 
+    // Lấy ảnh sản phẩm theo ID sản phẩm
     public function findByProductId($productId)
     {
         $sql = "SELECT * FROM {$this->table} WHERE productId = :productId";
@@ -38,12 +40,14 @@ class ProductImage extends BaseModel
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    // Xóa ảnh sản phẩm theo ID sản phẩm
     public function deleteByProductId($productId)
     {
         $sql = "DELETE FROM {$this->table} WHERE productId = :productId";
         return $this->db->prepare($sql)->execute(['productId' => $productId]);
     }
 
+    // Lấy ảnh sản phẩm theo ID biến thể
     public function findByVariantId($variantId)
     {
         $sql = "SELECT * FROM {$this->table} WHERE variantId = :variantId LIMIT 1";
@@ -52,6 +56,7 @@ class ProductImage extends BaseModel
         return $stmt->fetch(\PDO::FETCH_ASSOC);
     }
 
+    // Xóa ảnh sản phẩm theo ID biến thể
     public function deleteByVariantId($variantId)
     {
         $sql = "DELETE FROM {$this->table} WHERE variantId = :variantId";
@@ -59,6 +64,7 @@ class ProductImage extends BaseModel
         return $stmt->execute(['variantId' => $variantId]);
     }
 
+    // Lấy ảnh sản phẩm theo ID biến thể
     public function getImagesByVariantId($variantId)
     {
         $sql = "SELECT * FROM {$this->table} WHERE variantId = :variantId";
@@ -67,6 +73,7 @@ class ProductImage extends BaseModel
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    // Lấy ảnh chính của sản phẩm
     public function findMainImage($productId)
     {
         $sql = "SELECT * FROM product_images 

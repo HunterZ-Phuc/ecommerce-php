@@ -23,7 +23,6 @@ class HomeController extends BaseController
         $this->variantCombinationModel = new VariantCombination();
     }
 
-    //sửa ở đây point 3
     public function index()
     {
         try {
@@ -98,9 +97,6 @@ class HomeController extends BaseController
                 throw new \Exception("Không tìm thấy sản phẩm");
             }
 
-            // Debug thông tin sản phẩm
-            error_log("Product data: " . json_encode($product));
-
             // Lấy các biến thể của sản phẩm
             $product['variants'] = $this->variantModel->findByProductId($id);
 
@@ -136,9 +132,6 @@ class HomeController extends BaseController
                 'product' => $product
             ];
 
-            // Log dữ liệu để debug
-            echo '<script>console.log("Product data:", ' . json_encode($product) . ');</script>';
-
             // Render view
             $this->view('home/productDetail', $data);
 
@@ -157,7 +150,7 @@ class HomeController extends BaseController
             $minPrice = $_GET['minPrice'] ?? '';
             $maxPrice = $_GET['maxPrice'] ?? '';
             $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-            $limit = 12;
+            $limit = 12;  // Số sản phẩm trên mỗi trang
             $offset = ($page - 1) * $limit;
 
             // Khởi tạo mảng categories

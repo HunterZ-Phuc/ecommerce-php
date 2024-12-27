@@ -73,8 +73,8 @@ class OrderController extends BaseController
         // 5. Lấy địa chỉ của user
         $addresses = $this->addressModel->findByUserId($userId);
         if (empty($addresses)) {
-            $_SESSION['error'] = 'Vui lòng th��m địa chỉ giao hàng';
-            $this->redirect('address/create');
+            $_SESSION['no_address'] = true;
+            $this->redirect('cart');
             return;
         }
 

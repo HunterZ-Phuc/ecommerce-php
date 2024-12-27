@@ -27,9 +27,10 @@ class EmployeeController extends BaseController
 
     public function index()
     {
-        $this->redirect('employee/dashboard');
+        header('Location: /ecommerce-php/employee/dashboard');
     }
 
+    // View dashboard
     public function dashboard()
     {
         try {
@@ -98,6 +99,7 @@ class EmployeeController extends BaseController
         }
     }
 
+    // View quản lý nhân viên của admin
     public function employeeManagement()
     {
         $employees = $this->model->findAll();
@@ -107,11 +109,13 @@ class EmployeeController extends BaseController
         ]);
     }
 
+    // Tạo nhân viên mới
     public function create()
     {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') { //Kiểm tra phương thức request
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') { 
             try {
-                $data = [  // Tạo mảng dữ liệu từ input
+                // Tạo mảng dữ liệu từ input
+                $data = [
                     'username' => $_POST['username'],
                     'email' => $_POST['email'],
                     'password' => password_hash($_POST['password'], PASSWORD_DEFAULT), // Mã hóa password
@@ -124,19 +128,20 @@ class EmployeeController extends BaseController
                     'avatar' => 'default-avatar.jpg' // Mặc định avatar
                 ];
 
-                $this->model->create($data); //Gọi hàm create của model để lưu dữ liệu vào database
+                $this->model->create($data);
                 $_SESSION['success'] = 'Thêm nhân viên thành công';
-            } catch (\Exception $e) { // Xử lý ngoại lệ
+            } catch (\Exception $e) {
                 $_SESSION['error'] = $e->getMessage();
             }
             header('Location: /ecommerce-php/admin/employee-management'); //Reload lại trang cho đúng với dữ liệu mới
             exit;
         }
         // Khi không phải POST request, chuyển hướng đến trang quản lý nhân viên
-        header('Location: /ecommerce-php/admin/employee-management'); // Chuyển hướng đến trang quản lý nhân viên
+        header('Location: /ecommerce-php/admin/employee-management');
         exit; // Kết thúc chương trình
     }
 
+    // Cập nhật thông tin nhân viên
     public function edit($id)
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -167,6 +172,7 @@ class EmployeeController extends BaseController
         exit;
     }
 
+    // Xóa nhân viên
     public function delete($id)
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -183,6 +189,7 @@ class EmployeeController extends BaseController
         exit;
     }
 
+    // View quản lý đơn hàng của nhân viên
     public function orders()
     {
         try {
@@ -198,6 +205,7 @@ class EmployeeController extends BaseController
         }
     }
 
+    // View chi tiết đơn hàng
     public function orderDetail($id)
     {
         try {
@@ -216,6 +224,7 @@ class EmployeeController extends BaseController
         }
     }
 
+    // Cập nhật trạng thái đơn hàng
     public function updateOrderStatus()
     {
         try {
@@ -260,6 +269,7 @@ class EmployeeController extends BaseController
         }
     }
 
+    // Cập nhật trạng thái thanh toán
     public function confirmPayment()
     {
         try {
@@ -281,6 +291,12 @@ class EmployeeController extends BaseController
                 $this->orderModel->updateOrderStatus($orderId, 'CONFIRMED', 'Thanh toán thành công', $userId);
             }
 
+            // Nếu thanh toán không thành công, cập nhật trạng thái đơn hàng sang CANCELLED 
+            if ($status === 'FAILED') {
+                $userId = $this->auth->getUserId();
+                $this->orderModel->updateOrderStatus($orderId, 'CANCELLED', 'Thanh toán thất bại', $userId);
+            }
+
             $this->db->commit();
             $_SESSION['success'] = 'Cập nhật trạng thái thanh toán thành công';
             $this->redirect("employee/order/{$orderId}");
@@ -292,6 +308,7 @@ class EmployeeController extends BaseController
         }
     }
 
+    // Lấy thống kê doanh thu
     public function getOrderStats()
     {
         $startDate = $_GET['startDate'] ?? null;
@@ -305,65 +322,129 @@ class EmployeeController extends BaseController
         ]);
     }
 
+    // Xuất danh sách đơn hàng
     public function exportOrders()
     {
-        $status = $_GET['status'] ?? null;
-        $orders = $status ? 
-            $this->orderModel->getOrdersByStatus($status) : 
-            $this->orderModel->getPendingOrders();
-
-        // Tạo file Excel
-        header('Content-Type: application/vnd.ms-excel');
-        header('Content-Disposition: attachment;filename="orders.xls"');
-        header('Cache-Control: max-age=0');
-
-        echo "Mã đơn\tKhách hàng\tSĐT\tĐịa chỉ\tTổng tiền\tThanh toán\tTrạng thái\tNgày đặt\n";
-        
-        foreach ($orders as $order) {
-            echo "{$order['id']}\t";
-            echo "{$order['fullName']}\t";
-            echo "{$order['phone']}\t";
-            echo "{$order['address']}\t";
-            echo number_format($order['totalAmount']) . "đ\t";
-            echo ($order['paymentMethod'] === 'COD' ? 'COD' : 'Chuyển khoản') . "\t";
+        try {
+            // Lấy trạng thái từ query parameter nếu có
+            $status = $_GET['status'] ?? null;
             
-            $status = '';
-            switch ($order['orderStatus']) {
-                case 'PENDING':
-                    $status = 'Chờ xác nhận';
-                    break;
-                case 'PROCESSING':
-                    $status = 'Đang xử lý';
-                    break;
-                case 'SHIPPING':
-                    $status = 'Đang giao';
-                    break;
-                case 'DELIVERED':
-                    $status = 'Đã giao';
-                    break;
-                case 'CANCELLED':
-                    $status = 'Đã hủy';
-                    break;
+            // Lấy danh sách đơn hàng
+            $orders = $status ? 
+                $this->orderModel->getOrdersByStatus($status) : 
+                $this->orderModel->getPendingOrders();
+
+            // Tên file
+            $filename = 'orders_' . date('Y-m-d_H-i-s') . '.csv';
+            
+            // Header cho file CSV
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            
+            // Tạo file pointer để ghi
+            $output = fopen('php://output', 'w');
+            
+            // Thêm BOM để Excel hiển thị tiếng Việt
+            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Header của các cột
+            fputcsv($output, [
+                'Mã đơn',
+                'Khách hàng',
+                'SĐT',
+                'Địa chỉ', 
+                'Tổng tiền',
+                'Thanh toán',
+                'Trạng thái',
+                'Ngày đặt'
+            ]);
+
+            // Ghi dữ liệu từng dòng
+            foreach ($orders as $order) {
+                $status = $this->getOrderStatusText($order['orderStatus']);
+                $paymentMethod = $order['paymentMethod'] === 'CASH_ON_DELIVERY' ? 'Tiền mặt' : 'Chuyển khoản';
+                
+                fputcsv($output, [
+                    $order['id'],
+                    $order['fullName'],
+                    $order['phone'],
+                    $order['address'],
+                    number_format($order['totalAmount']) . 'đ',
+                    $paymentMethod,
+                    $status,
+                    date('d/m/Y H:i', strtotime($order['createdAt']))
+                ]);
             }
-            echo "{$status}\t";
             
-            echo date('d/m/Y H:i', strtotime($order['createdAt'])) . "\n";
-        }
+            fclose($output);
+            exit;
 
-        exit;
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect('employee/orders');
+        }
     }
 
-    public function printOrder($orderId)
+    // Helper function để chuyển đổi trạng thái
+    private function getOrderStatusText($status) 
     {
-        $order = $this->orderModel->getOrderDetails($orderId);
+        $statusMap = [
+            'PENDING' => 'Chờ xác nhận',
+            'PROCESSING' => 'Đang xử lý',
+            'SHIPPING' => 'Đang giao',
+            'DELIVERED' => 'Đã giao',
+            'CANCELLED' => 'Đã hủy'
+        ];
+        return $statusMap[$status] ?? $status;
+    }
 
-        if (!$order) {
-            $this->redirect('404');
-            return;
+    // View đổi mật khẩu
+    public function changePassword()
+    {
+        if (!$this->auth->isLoggedIn()) {
+            $this->redirect('/employee-login');
         }
 
-        $this->view('order/print', [
-            'order' => $order
-        ]);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $currentPassword = $_POST['currentPassword'];
+                $newPassword = $_POST['newPassword'];
+                $confirmPassword = $_POST['confirmPassword'];
+
+                // Validate input
+                if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
+                    throw new Exception('Vui lòng điền đầy đủ thông tin');
+                }
+
+                if ($newPassword !== $confirmPassword) {
+                    throw new Exception('Mật khẩu mới không khớp');
+                }
+
+                if (strlen($newPassword) < 6) {
+                    throw new Exception('Mật khẩu mới phải có ít nhất 6 ký tự');
+                }
+
+                // Verify mật khẩu hiện tại
+                $employee = $this->model->findById($this->auth->getUserId());
+                if (!password_verify($currentPassword, $employee['password'])) {
+                    throw new Exception('Mật khẩu hiện tại không đúng');
+                }
+
+                // Cập nhật mật khẩu
+                $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+                $this->model->updatePassword($employee['id'], $hashedPassword);
+
+                $_SESSION['success'] = 'Đổi mật khẩu thành công';
+                $this->redirect('employee/change-password');
+
+            } catch (Exception $e) {
+                $_SESSION['error'] = $e->getMessage();
+                $this->redirect('employee/change-password');
+            }
+        }
+
+        $this->view('change_password', [
+            'title' => 'Đổi mật khẩu'
+        ], 'employee_layout');
     }
 }

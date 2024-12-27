@@ -13,6 +13,7 @@ class ProductVariantController extends BaseController
         $this->variantModel = new ProductVariant();
     }
 
+    // Tạo biến thể
     public function create()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -28,6 +29,7 @@ class ProductVariantController extends BaseController
         }
     }
 
+    // Sửa biến thể
     public function edit($id)
     {
         $variant = $this->variantModel->findById($id);
@@ -49,6 +51,7 @@ class ProductVariantController extends BaseController
         ]);
     }
 
+    // Xóa biến thể
     public function delete($id)
     {
         $this->variantModel->delete($id);

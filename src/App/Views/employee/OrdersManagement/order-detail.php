@@ -95,6 +95,7 @@ use App\Helpers\OrderHelper;
                             <thead>
                                 <tr>
                                     <th>Sản phẩm</th>
+                                    <th>SKU</th>
                                     <th>Giá</th>
                                     <th>Số lượng</th>
                                     <th>Tổng</th>
@@ -104,6 +105,7 @@ use App\Helpers\OrderHelper;
                                 <?php foreach ($order['items'] as $item): ?>
                                     <tr>
                                         <td><?= $item['productName'] ?></td>
+                                        <td><?= $item['sku'] ?? 'N/A' ?></td>
                                         <td><?= number_format($item['price']) ?>đ</td>
                                         <td><?= $item['quantity'] ?></td>
                                         <td><?= number_format($item['price'] * $item['quantity']) ?>đ</td>
@@ -197,7 +199,7 @@ use App\Helpers\OrderHelper;
                                 <option value="FAILED">Thanh toán thất bại</option>
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success">Xác nhận thanh toán</button>
+                        <button type="submit" class="btn btn-success">Xác nhận</button>
                     </form>
                 </div>
             </div>

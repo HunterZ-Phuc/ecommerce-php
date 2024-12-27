@@ -52,6 +52,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link text-white" href="/ecommerce-php/employee/change-password">
+                            <i class="bi bi-key"></i> Đổi mật khẩu
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link text-white" href="/ecommerce-php/logout">
                             <i class="bi bi-box-arrow-right"></i> Đăng xuất
                         </a>

@@ -6,6 +6,7 @@ class VariantType extends BaseModel
 {
     protected $table = 'variant_types';
 
+    // Tạo loại biến thể
     public function createVariantType($productId, $name)
     {
         $sql = "INSERT INTO variant_types (productId, name) VALUES (:productId, :name)";
@@ -17,6 +18,7 @@ class VariantType extends BaseModel
         return $this->db->lastInsertId();
     }
 
+    // Lấy ID loại biến thể theo tên
     public function getVariantTypeIdByName($productId, $name)
     {
         $sql = "SELECT id FROM variant_types WHERE productId = :productId AND name = :name";
@@ -28,6 +30,7 @@ class VariantType extends BaseModel
         return $stmt->fetchColumn();
     }
 
+    // Tìm kiếm hoặc tạo loại biến thể
     public function findOrCreate($data)
     {
         // Tìm kiếm variant type hiện có
@@ -45,6 +48,7 @@ class VariantType extends BaseModel
         return $this->createVariantType($data['productId'], $data['name']);
     }
 
+    // Lấy loại biến thể theo ID sản phẩm
     public function findByProductId($productId)
     {
         $sql = "SELECT * FROM variant_types WHERE productId = :productId";
@@ -53,6 +57,7 @@ class VariantType extends BaseModel
         return $stmt->fetchAll();
     }
 
+    // Xóa loại biến thể theo ID sản phẩm
     public function deleteByProductId($productId)
     {
         $sql = "DELETE FROM variant_types WHERE productId = :productId";

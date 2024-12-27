@@ -52,8 +52,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/ecommerce-php/admin/user-management">
+                        <a class="nav-link text-white" href="/ecommerce-php/admin/users">
                             <i class="bi bi-people"></i> Quản lý khách hàng
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/ecommerce-php/admin/change-password">
+                            <i class="bi bi-key"></i> Đổi mật khẩu
                         </a>
                     </li>
                     <li class="nav-item">

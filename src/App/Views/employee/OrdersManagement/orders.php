@@ -5,8 +5,9 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Quản lý đơn hàng</h5>
                     <div>
-                        <a href="/ecommerce-php/employee/export/orders" class="btn btn-success">
-                            <i class="bi bi-file-excel"></i> Xuất Excel
+                        <a href="/ecommerce-php/employee/export/orders<?= isset($_GET['status']) ? '?status=' . $_GET['status'] : '' ?>" 
+                           class="btn btn-success">
+                            <i class="bi bi-file-earmark-excel me-2"></i>Xuất Excel
                         </a>
                     </div>
                 </div>

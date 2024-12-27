@@ -25,10 +25,10 @@ class UserController extends BaseController
     public function index()
     {
         // Điều hướng từ /user sang /user/profile
-        header('Location: /ecommerce-php/user/profile');
-        exit();
+        $this->redirect('user/profile');
     }
 
+    // View hồ sơ của người dùng
     public function profile()
     {
         // Kiểm tra đăng nhập
@@ -37,12 +37,11 @@ class UserController extends BaseController
         }
 
         $userId = $this->auth->getUserId();
-        error_log("User ID: " . $userId);
 
         // Lấy thông tin user từ database
         $user = $this->userModel->findById($userId);
 
-        // Truyền đầy đủ dữ liệu vào view
+        // Render view
         $this->view('user/account/profile', [
             'title' => 'Hồ sơ của tôi',
             'user' => $user,
@@ -51,10 +50,12 @@ class UserController extends BaseController
             'email' => $user['email'],
             'phone' => $user['phone'],
             'sex' => $user['sex'],
-            'dateOfBirth' => $user['dateOfBirth']
+            'dateOfBirth' => $user['dateOfBirth'],
+            'active_page' => 'profile'
         ]);
     }
 
+    // Cập nhật thông tin người dùng
     public function updateProfile()
     {
         try {
@@ -141,6 +142,7 @@ class UserController extends BaseController
         }
     }
 
+    // Cập nhật avatar
     public function updateAvatar()
     {
         try {
@@ -221,28 +223,7 @@ class UserController extends BaseController
         }
     }
 
-    protected function maskEmail($email)
-    {
-        if (!$email)
-            return '';
-
-        $parts = explode('@', $email);
-        if (count($parts) !== 2)
-            return $email;
-
-        $name = $parts[0];
-        $domain = $parts[1];
-        $maskedName = substr($name, 0, 2) . str_repeat('*', max(strlen($name) - 2, 0));
-        return $maskedName . '@' . $domain;
-    }
-
-    protected function maskPhone($phone)
-    {
-        if (!$phone)
-            return '';
-        return substr($phone, 0, 3) . str_repeat('*', max(strlen($phone) - 5, 0)) . substr($phone, -2);
-    }
-
+    // Cập nhật email
     public function updateEmail()
     {
         try {
@@ -284,6 +265,7 @@ class UserController extends BaseController
         }
     }
 
+    // Cập nhật số điện thoại
     public function updatePhone()
     {
         try {
@@ -325,6 +307,7 @@ class UserController extends BaseController
         }
     }
 
+    // View địa chỉ của người dùng
     public function addresses()
     {
         if (!$this->auth->isLoggedIn()) {
@@ -341,6 +324,7 @@ class UserController extends BaseController
         ], 'user_layout');
     }
 
+    // Lấy địa chỉ của người dùng
     public function getAddress($id)
     {
         if (!$this->auth->isLoggedIn()) {
@@ -360,6 +344,7 @@ class UserController extends BaseController
         ]);
     }
 
+    // Tạo địa chỉ mới
     public function createAddress()
     {
         try {
@@ -391,6 +376,7 @@ class UserController extends BaseController
         }
     }
 
+    // Cập nhật địa chỉ
     public function updateAddress($id)
     {
         try {
@@ -434,6 +420,7 @@ class UserController extends BaseController
         }
     }
 
+    // Xóa địa chỉ
     public function deleteAddress($id)
     {
         try {
@@ -454,6 +441,7 @@ class UserController extends BaseController
         }
     }
 
+    // Thiết lập địa chỉ mặc định
     public function setDefaultAddress($id)
     {
         try {
@@ -472,5 +460,56 @@ class UserController extends BaseController
         } catch (Exception $e) {
             $this->error($e->getMessage());
         }
+    }
+
+    // View đổi mật khẩu
+    public function changePassword()
+    {
+        if (!$this->auth->isLoggedIn()) {
+            $this->redirect('/login');
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $currentPassword = $_POST['currentPassword'];
+                $newPassword = $_POST['newPassword'];
+                $confirmPassword = $_POST['confirmPassword'];
+
+                // Validate input
+                if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
+                    throw new Exception('Vui lòng điền đầy đủ thông tin');
+                }
+
+                if ($newPassword !== $confirmPassword) {
+                    throw new Exception('Mật khẩu mới không khớp');
+                }
+
+                if (strlen($newPassword) < 6) {
+                    throw new Exception('Mật khẩu mới phải có ít nhất 6 ký tự');
+                }
+
+                // Verify current password
+                $user = $this->userModel->findById($this->auth->getUserId());
+                if (!password_verify($currentPassword, $user['password'])) {
+                    throw new Exception('Mật khẩu hiện tại không đúng');
+                }
+
+                // Update password
+                $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+                $this->userModel->updatePassword($user['id'], $hashedPassword);
+
+                $_SESSION['success'] = 'Đổi mật khẩu thành công';
+                $this->redirect('user/change-password');
+
+            } catch (Exception $e) {
+                $_SESSION['error'] = $e->getMessage();
+                $this->redirect('user/change-password');
+            }
+        }
+
+        $this->view('change_password', [
+            'title' => 'Đổi mật khẩu',
+            'active_page' => 'change-password'
+        ], 'user_layout');
     }
 }

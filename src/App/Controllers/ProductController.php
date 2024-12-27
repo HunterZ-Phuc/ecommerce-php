@@ -25,7 +25,7 @@ class ProductController extends BaseController
     public function __construct()
     {
         parent::__construct();
-        $this->checkRole(['EMPLOYEE']);
+        $this->checkRole(['EMPLOYEE', 'ADMIN']);
         $this->productModel = new Product();
         $this->variantModel = new ProductVariant();
         $this->productImageModel = new ProductImage();
@@ -35,77 +35,36 @@ class ProductController extends BaseController
         $this->db = Database::getInstance()->getConnection();
     }
 
+    // View quản lý sản phẩm
     public function index()
     {
-        $products = $this->productModel->findAll();
+        // Lấy các tham số tìm kiếm và phân trang
+        $search = $_GET['search'] ?? '';
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $limit = 15; // Số sản phẩm trên mỗi trang
 
+        // Lấy tổng số sản phẩm và danh sách sản phẩm theo điều kiện
+        $products = $this->productModel->findWithPagination($page, $limit, $search);
+        $totalProducts = $this->productModel->count("WHERE p.productName LIKE :search", [':search' => "%$search%"]);
+        $totalPages = ceil($totalProducts / $limit);
+
+        // Thêm thông tin ảnh và biến thể như cũ
         foreach ($products as &$product) {
-            // Lấy tất cả ảnh của sản phẩm, bao gồm cả ảnh chính
             $product['images'] = $this->productImageModel->findByProductId($product['id']);
-
-            // Lấy các biến thể
             $product['variants'] = $this->variantModel->findByProductId($product['id']);
 
             foreach ($product['variants'] as &$variant) {
                 $variant['images'] = $this->productImageModel->getImagesByVariantId($variant['id']);
-
-                $stmt = $this->db->prepare("
-                    SELECT 
-                        vt.id as typeId,
-                        vt.name as typeName,
-                        vv.id as valueId,
-                        vv.value
-                    FROM variant_combinations vc
-                    JOIN variant_values vv ON vc.variantValueId = vv.id
-                    JOIN variant_types vt ON vv.variantTypeId = vt.id
-                    WHERE vc.productVariantId = :variantId
-                    ORDER BY vt.id
-                ");
-                $stmt->execute(['variantId' => $variant['id']]);
-                $variant['combinations'] = $stmt->fetchAll();
+                $variant['combinations'] = $this->variantCombinationModel->getVariantCombinationsWithDetails($variant['id']);
             }
         }
 
         $this->view('employee/ProductManagement/index', [
             'title' => 'Quản lý Sản phẩm',
             'products' => $products,
-        ], 'employee_layout');
-    }
-
-    public function productManagement()
-    {
-        $products = $this->productModel->findAll();
-
-        foreach ($products as &$product) {
-            // Lấy tất cả ảnh của sản phẩm, bao gồm cả ảnh chính
-            $product['images'] = $this->productImageModel->findByProductId($product['id']);
-
-            // Lấy các biến thể
-            $product['variants'] = $this->variantModel->findByProductId($product['id']);
-
-            foreach ($product['variants'] as &$variant) {
-                $variant['images'] = $this->productImageModel->getImagesByVariantId($variant['id']);
-
-                $stmt = $this->db->prepare("
-                    SELECT 
-                        vt.id as typeId,
-                        vt.name as typeName,
-                        vv.id as valueId,
-                        vv.value
-                    FROM variant_combinations vc
-                    JOIN variant_values vv ON vc.variantValueId = vv.id
-                    JOIN variant_types vt ON vv.variantTypeId = vt.id
-                    WHERE vc.productVariantId = :variantId
-                    ORDER BY vt.id
-                ");
-                $stmt->execute(['variantId' => $variant['id']]);
-                $variant['combinations'] = $stmt->fetchAll();
-            }
-        }
-
-        $this->view('employee/ProductManagement/index', [
-            'title' => 'Quản lý Sản phẩm',
-            'products' => $products,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'search' => $search
         ], 'employee_layout');
     }
 
