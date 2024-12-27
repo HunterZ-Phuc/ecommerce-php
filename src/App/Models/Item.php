@@ -12,7 +12,7 @@ class Item extends BaseModel
         $data['createdAt'] = date('Y-m-d H:i:s');
         return parent::create($data);
     }
-    
+
     // Lấy danh sách sản phẩm trong đơn hàng
     public function findByOrderId($orderId)
     {

@@ -37,21 +37,21 @@ class EmployeeController extends BaseController
             // Lấy tổng số sản phẩm và các thống kê
             $products = $this->productModel->findAll();
             $totalProducts = count($products);
-            
+
             $outOfStockProducts = 0;
             $lowStockProducts = $this->productModel->getLowStockCount();
             $activeProducts = 0;
             $lowStockProductsList = [];
-            
+
             foreach ($products as $product) {
                 // Lấy tất cả biến thể của sản phẩm
                 $variants = $this->productModel->getVariantsByProductId($product['id']);
-                
+
                 $totalStock = 0;
                 foreach ($variants as $variant) {
                     $totalStock += $variant['quantity'];
                 }
-                
+
                 // Kiểm tra trạng thái stock
                 if ($totalStock == 0) {
                     $outOfStockProducts++;
@@ -65,18 +65,18 @@ class EmployeeController extends BaseController
                         'status' => $product['status']
                     ];
                 }
-                
+
                 // Đếm sản phẩm đang bán
                 if ($product['status'] === 'ON_SALE') {
                     $activeProducts++;
                 }
             }
-            
+
             // Sắp xếp sản phẩm sắp hết hàng theo số lượng tăng dần
-            usort($lowStockProductsList, function($a, $b) {
+            usort($lowStockProductsList, function ($a, $b) {
                 return $a['stock'] <=> $b['stock'];
             });
-            
+
             // Giới hạn chỉ lấy 10 sản phẩm
             $lowStockProductsList = array_slice($lowStockProductsList, 0, 10);
 
@@ -88,7 +88,7 @@ class EmployeeController extends BaseController
                 'activeProducts' => $activeProducts,
                 'lowStockProductsList' => $lowStockProductsList
             ], 'employee_layout');
-            
+
         } catch (\Exception $e) {
             // Log lỗi và hiển thị dashboard với thông báo lỗi
             error_log($e->getMessage());
@@ -112,7 +112,7 @@ class EmployeeController extends BaseController
     // Tạo nhân viên mới
     public function create()
     {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') { 
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 // Tạo mảng dữ liệu từ input
                 $data = [
@@ -194,7 +194,7 @@ class EmployeeController extends BaseController
     {
         try {
             $orders = $this->orderModel->getAllOrders();
-            
+
             $this->view('employee/OrdersManagement/orders', [
                 'title' => 'Quản lý đơn hàng',
                 'orders' => $orders
@@ -252,7 +252,7 @@ class EmployeeController extends BaseController
             $_SESSION['success'] = 'Cập nhật trạng thái đơn hàng thành công';
             // Lấy lại thông tin đơn hàng mới nhất
             $updatedOrder = $this->orderModel->getOrderById($orderId);
-            
+
             // Render lại view với dữ liệu mới
             return $this->view('employee/OrdersManagement/order-detail', [
                 'title' => 'Chi tiết đơn hàng #' . $orderId,
@@ -278,8 +278,8 @@ class EmployeeController extends BaseController
             $orderId = $_POST['orderId'] ?? null;
             $status = $_POST['status'] ?? null;
             // Thêm note tương ứng với trạng thái
-            $note = $status === 'PAID' ? 
-                'Xác nhận đã nhận được thanh toán' : 
+            $note = $status === 'PAID' ?
+                'Xác nhận đã nhận được thanh toán' :
                 'Thanh toán thất bại';
 
             // Gọi updatePaymentStatus với note
@@ -308,51 +308,37 @@ class EmployeeController extends BaseController
         }
     }
 
-    // Lấy thống kê doanh thu
-    public function getOrderStats()
-    {
-        $startDate = $_GET['startDate'] ?? null;
-        $endDate = $_GET['endDate'] ?? null;
-
-        $stats = $this->orderModel->getRevenueStats($startDate, $endDate);
-        
-        $this->jsonResponse([
-            'success' => true,
-            'data' => $stats
-        ]);
-    }
-
     // Xuất danh sách đơn hàng
     public function exportOrders()
     {
         try {
             // Lấy trạng thái từ query parameter nếu có
             $status = $_GET['status'] ?? null;
-            
+
             // Lấy danh sách đơn hàng
-            $orders = $status ? 
-                $this->orderModel->getOrdersByStatus($status) : 
+            $orders = $status ?
+                $this->orderModel->getOrdersByStatus($status) :
                 $this->orderModel->getPendingOrders();
 
             // Tên file
             $filename = 'orders_' . date('Y-m-d_H-i-s') . '.csv';
-            
+
             // Header cho file CSV
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename="' . $filename . '"');
-            
+
             // Tạo file pointer để ghi
             $output = fopen('php://output', 'w');
-            
+
             // Thêm BOM để Excel hiển thị tiếng Việt
-            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
-            
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
             // Header của các cột
             fputcsv($output, [
                 'Mã đơn',
                 'Khách hàng',
                 'SĐT',
-                'Địa chỉ', 
+                'Địa chỉ',
                 'Tổng tiền',
                 'Thanh toán',
                 'Trạng thái',
@@ -363,7 +349,7 @@ class EmployeeController extends BaseController
             foreach ($orders as $order) {
                 $status = $this->getOrderStatusText($order['orderStatus']);
                 $paymentMethod = $order['paymentMethod'] === 'CASH_ON_DELIVERY' ? 'Tiền mặt' : 'Chuyển khoản';
-                
+
                 fputcsv($output, [
                     $order['id'],
                     $order['fullName'],
@@ -375,7 +361,7 @@ class EmployeeController extends BaseController
                     date('d/m/Y H:i', strtotime($order['createdAt']))
                 ]);
             }
-            
+
             fclose($output);
             exit;
 
@@ -386,7 +372,7 @@ class EmployeeController extends BaseController
     }
 
     // Helper function để chuyển đổi trạng thái
-    private function getOrderStatusText($status) 
+    private function getOrderStatusText($status)
     {
         $statusMap = [
             'PENDING' => 'Chờ xác nhận',

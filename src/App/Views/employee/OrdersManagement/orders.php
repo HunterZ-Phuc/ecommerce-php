@@ -5,8 +5,8 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Quản lý đơn hàng</h5>
                     <div>
-                        <a href="/ecommerce-php/employee/export/orders<?= isset($_GET['status']) ? '?status=' . $_GET['status'] : '' ?>" 
-                           class="btn btn-success">
+                        <a href="/ecommerce-php/employee/export/orders<?= isset($_GET['status']) ? '?status=' . $_GET['status'] : '' ?>"
+                            class="btn btn-success">
                             <i class="bi bi-file-earmark-excel me-2"></i>Xuất Excel
                         </a>
                     </div>
@@ -14,13 +14,15 @@
                 <div class="card-body">
                     <?php if (!empty($_SESSION['success'])): ?>
                         <div class="alert alert-success">
-                            <?= $_SESSION['success']; unset($_SESSION['success']); ?>
+                            <?= $_SESSION['success'];
+                            unset($_SESSION['success']); ?>
                         </div>
                     <?php endif; ?>
 
                     <?php if (!empty($_SESSION['error'])): ?>
                         <div class="alert alert-danger">
-                            <?= $_SESSION['error']; unset($_SESSION['error']); ?>
+                            <?= $_SESSION['error'];
+                            unset($_SESSION['error']); ?>
                         </div>
                     <?php endif; ?>
 
@@ -61,10 +63,10 @@
                                                 <?= number_format($order['totalAmount'], 0, ',', '.') ?>đ
                                             </td>
                                             <td>
-                                                <?php 
-                                                    $paymentMethodText = $order['paymentMethod'] === 'CASH_ON_DELIVERY' 
-                                                        ? 'Tiền mặt' 
-                                                        : 'Chuyển khoản';
+                                                <?php
+                                                $paymentMethodText = $order['paymentMethod'] === 'CASH_ON_DELIVERY'
+                                                    ? 'Tiền mặt'
+                                                    : 'Chuyển khoản';
                                                 ?>
                                                 <span class="badge bg-info">
                                                     <?= $paymentMethodText ?>
@@ -72,32 +74,32 @@
                                             </td>
                                             <td>
                                                 <?php
-                                                    $orderStatusClass = '';
-                                                    switch($order['orderStatus']) {
-                                                        case 'PENDING':
-                                                            $orderStatusClass = 'bg-warning';
-                                                            $statusText = 'Chờ xử lý';
-                                                            break;
-                                                        case 'PROCESSING':
-                                                            $orderStatusClass = 'bg-info';
-                                                            $statusText = 'Đang xử lý';
-                                                            break;
-                                                        case 'SHIPPING':
-                                                            $orderStatusClass = 'bg-primary';
-                                                            $statusText = 'Đang giao';
-                                                            break;
-                                                        case 'DELIVERED':
-                                                            $orderStatusClass = 'bg-success';
-                                                            $statusText = 'Đã giao';
-                                                            break;
-                                                        case 'CANCELLED':
-                                                            $orderStatusClass = 'bg-danger';
-                                                            $statusText = 'Đã hủy';
-                                                            break;
-                                                        default:
-                                                            $orderStatusClass = 'bg-secondary';
-                                                            $statusText = 'Không xác định';
-                                                    }
+                                                $orderStatusClass = '';
+                                                switch ($order['orderStatus']) {
+                                                    case 'PENDING':
+                                                        $orderStatusClass = 'bg-warning';
+                                                        $statusText = 'Chờ xử lý';
+                                                        break;
+                                                    case 'PROCESSING':
+                                                        $orderStatusClass = 'bg-info';
+                                                        $statusText = 'Đang xử lý';
+                                                        break;
+                                                    case 'SHIPPING':
+                                                        $orderStatusClass = 'bg-primary';
+                                                        $statusText = 'Đang giao';
+                                                        break;
+                                                    case 'DELIVERED':
+                                                        $orderStatusClass = 'bg-success';
+                                                        $statusText = 'Đã giao';
+                                                        break;
+                                                    case 'CANCELLED':
+                                                        $orderStatusClass = 'bg-danger';
+                                                        $statusText = 'Đã hủy';
+                                                        break;
+                                                    default:
+                                                        $orderStatusClass = 'bg-secondary';
+                                                        $statusText = 'Không xác định';
+                                                }
                                                 ?>
                                                 <span class="badge <?= $orderStatusClass ?>">
                                                     <?= $statusText ?>
@@ -105,24 +107,24 @@
                                             </td>
                                             <td>
                                                 <?php
-                                                    $paymentStatusClass = '';
-                                                    switch($order['paymentStatus']) {
-                                                        case 'PENDING':
-                                                            $paymentStatusClass = 'bg-warning';
-                                                            $paymentText = 'Chờ thanh toán';
-                                                            break;
-                                                        case 'PAID':
-                                                            $paymentStatusClass = 'bg-success';
-                                                            $paymentText = 'Đã thanh toán';
-                                                            break;
-                                                        case 'REFUNDED':
-                                                            $paymentStatusClass = 'bg-info';
-                                                            $paymentText = 'Đã hoàn tiền';
-                                                            break;
-                                                        default:
-                                                            $paymentStatusClass = 'bg-secondary';
-                                                            $paymentText = 'Không xác định';
-                                                    }
+                                                $paymentStatusClass = '';
+                                                switch ($order['paymentStatus']) {
+                                                    case 'PENDING':
+                                                        $paymentStatusClass = 'bg-warning';
+                                                        $paymentText = 'Chờ thanh toán';
+                                                        break;
+                                                    case 'PAID':
+                                                        $paymentStatusClass = 'bg-success';
+                                                        $paymentText = 'Đã thanh toán';
+                                                        break;
+                                                    case 'REFUNDED':
+                                                        $paymentStatusClass = 'bg-info';
+                                                        $paymentText = 'Đã hoàn tiền';
+                                                        break;
+                                                    default:
+                                                        $paymentStatusClass = 'bg-secondary';
+                                                        $paymentText = 'Không xác định';
+                                                }
                                                 ?>
                                                 <span class="badge <?= $paymentStatusClass ?>">
                                                     <?= $paymentText ?>
@@ -132,8 +134,8 @@
                                                 <?= date('d/m/Y H:i', strtotime($order['createdAt'])) ?>
                                             </td>
                                             <td>
-                                                <a href="/ecommerce-php/employee/order/<?= $order['id'] ?>" 
-                                                   class="btn btn-sm btn-primary">
+                                                <a href="/ecommerce-php/employee/order/<?= $order['id'] ?>"
+                                                    class="btn btn-sm btn-primary">
                                                     <i class="bi bi-eye"></i> Chi tiết
                                                 </a>
                                             </td>

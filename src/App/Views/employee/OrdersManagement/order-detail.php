@@ -134,7 +134,7 @@ use App\Helpers\OrderHelper;
                 <div class="card-body">
                     <form action="/ecommerce-php/employee/order/update-status" method="POST">
                         <input type="hidden" name="orderId" value="<?= $order['id'] ?>">
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Trạng thái hiện tại</label>
                             <div>
@@ -160,13 +160,13 @@ use App\Helpers\OrderHelper;
                                     'RETURNED' => [],
                                     'CANCELLED' => []
                                 ];
-                                
+
                                 $currentStatus = $order['orderStatus'];
                                 $nextStatuses = $validNextStatuses[$currentStatus] ?? [];
-                                
-                                foreach ($nextStatuses as $status): 
+
+                                foreach ($nextStatuses as $status):
                                     $statusText = OrderHelper::getOrderStatusText($status);
-                                ?>
+                                    ?>
                                     <option value="<?= $status ?>"><?= $statusText ?></option>
                                 <?php endforeach; ?>
                             </select>
@@ -184,25 +184,25 @@ use App\Helpers\OrderHelper;
 
             <!-- Cập nhật trạng thái thanh toán -->
             <?php if ($order['paymentMethod'] === 'QR_TRANSFER' && $order['paymentStatus'] === 'PENDING'): ?>
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Xác nhận thanh toán</h5>
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Xác nhận thanh toán</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="/ecommerce-php/employee/order/confirm-payment" method="POST">
+                            <input type="hidden" name="orderId" value="<?= $order['id'] ?>">
+                            <div class="mb-3">
+                                <label class="form-label">Trạng thái thanh toán</label>
+                                <select name="status" class="form-select" required>
+                                    <option value="">Chọn trạng thái</option>
+                                    <option value="PAID">Đã thanh toán</option>
+                                    <option value="FAILED">Thanh toán thất bại</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success">Xác nhận</button>
+                        </form>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form action="/ecommerce-php/employee/order/confirm-payment" method="POST">
-                        <input type="hidden" name="orderId" value="<?= $order['id'] ?>">
-                        <div class="mb-3">
-                            <label class="form-label">Trạng thái thanh toán</label>
-                            <select name="status" class="form-select" required>
-                                <option value="">Chọn trạng thái</option>
-                                <option value="PAID">Đã thanh toán</option>
-                                <option value="FAILED">Thanh toán thất bại</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-success">Xác nhận</button>
-                    </form>
-                </div>
-            </div>
             <?php endif; ?>
 
             <!-- Lịch sử đơn hàng -->

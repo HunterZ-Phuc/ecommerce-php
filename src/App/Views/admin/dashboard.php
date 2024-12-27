@@ -29,7 +29,8 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                 Doanh thu tháng này</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800"><?= number_format($monthlyRevenue) ?> đ</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><?= number_format($monthlyRevenue) ?> đ
+                            </div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -106,36 +107,36 @@
 <!-- Script cho biểu đồ -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Biểu đồ doanh thu
-const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-new Chart(revenueCtx, {
-    type: 'line',
-    data: {
-        labels: <?= json_encode($revenueData['labels']) ?>,
-        datasets: [{
-            label: 'Doanh thu (VNĐ)',
-            data: <?= json_encode($revenueData['values']) ?>,
-            borderColor: 'rgb(75, 192, 192)',
-            tension: 0.1
-        }]
-    }
-});
+    // Biểu đồ doanh thu
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: <?= json_encode($revenueData['labels']) ?>,
+            datasets: [{
+                label: 'Doanh thu (VNĐ)',
+                data: <?= json_encode($revenueData['values']) ?>,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        }
+    });
 
-// Biểu đồ trạng thái đơn hàng
-const statusCtx = document.getElementById('orderStatusChart').getContext('2d');
-new Chart(statusCtx, {
-    type: 'doughnut',
-    data: {
-        labels: <?= json_encode($orderStatusData['labels']) ?>,
-        datasets: [{
-            data: <?= json_encode($orderStatusData['values']) ?>,
-            backgroundColor: [
-                'rgb(255, 99, 132)',
-                'rgb(54, 162, 235)',
-                'rgb(255, 205, 86)',
-                'rgb(75, 192, 192)'
-            ]
-        }]
-    }
-});
+    // Biểu đồ trạng thái đơn hàng
+    const statusCtx = document.getElementById('orderStatusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: <?= json_encode($orderStatusData['labels']) ?>,
+            datasets: [{
+                data: <?= json_encode($orderStatusData['values']) ?>,
+                backgroundColor: [
+                    'rgb(255, 99, 132)',
+                    'rgb(54, 162, 235)',
+                    'rgb(255, 205, 86)',
+                    'rgb(75, 192, 192)'
+                ]
+            }]
+        }
+    });
 </script>

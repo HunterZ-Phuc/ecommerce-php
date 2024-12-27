@@ -200,9 +200,11 @@ class UserController extends BaseController
             }
 
             // Xóa avatar cũ nếu tồn tại và không phải avatar mặc định
-            if ($oldAvatarPath && 
-                $oldAvatarPath !== '/assets/images/default-avatar.png' && 
-                file_exists(ROOT_PATH . '/public' . $oldAvatarPath)) {
+            if (
+                $oldAvatarPath &&
+                $oldAvatarPath !== '/assets/images/default-avatar.png' &&
+                file_exists(ROOT_PATH . '/public' . $oldAvatarPath)
+            ) {
                 unlink(ROOT_PATH . '/public' . $oldAvatarPath);
             }
 

@@ -27,21 +27,21 @@ class Employee extends BaseModel
         return parent::update($id, $data); // Gọi hàm update của BaseModel để cập nhật dữ liệu vào database
     }
 
-        // Tìm nhân viên bằng username
-        public function findByUsername($username)
-        {
-            $sql = "SELECT * FROM {$this->table} WHERE username = :username";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute(['username' => $username]);
-            return $stmt->fetch(\PDO::FETCH_ASSOC);
-        }
-    
-        // Tìm nhân viên bằng email
-        public function findByEmail($email)
-        {
-            $sql = "SELECT * FROM {$this->table} WHERE email = :email";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute(['email' => $email]);
-            return $stmt->fetch(\PDO::FETCH_ASSOC);
-        }
+    // Tìm nhân viên bằng username
+    public function findByUsername($username)
+    {
+        $sql = "SELECT * FROM {$this->table} WHERE username = :username";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['username' => $username]);
+        return $stmt->fetch(\PDO::FETCH_ASSOC);
+    }
+
+    // Tìm nhân viên bằng email
+    public function findByEmail($email)
+    {
+        $sql = "SELECT * FROM {$this->table} WHERE email = :email";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['email' => $email]);
+        return $stmt->fetch(\PDO::FETCH_ASSOC);
+    }
 }

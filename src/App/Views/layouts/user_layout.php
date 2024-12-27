@@ -8,8 +8,7 @@
                 <div class="p-4">
                     <div class="d-flex align-items-center mb-4">
                         <img src="<?= '/ecommerce-php/public' . ($_SESSION['user']['avatar'] ?? '/assets/images/default-avatar.png') ?>"
-                            alt="User Profile" 
-                            class="rounded-circle me-3 user-avatar"
+                            alt="User Profile" class="rounded-circle me-3 user-avatar"
                             style="width: 60px; height: 60px; object-fit: cover;" />
                         <div>
                             <div class="fs-5 fw-semibold">

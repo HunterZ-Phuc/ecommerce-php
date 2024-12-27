@@ -90,10 +90,10 @@ $combo = array("lẻ", "combo");
         const variantModal = new bootstrap.Modal(document.getElementById('variantDetailsModal'));
 
         // Thêm xử lý cho nút "Xác nhận"
-        document.getElementById('confirmVariants').addEventListener('click', function() {
+        document.getElementById('confirmVariants').addEventListener('click', function () {
             // Đóng modal biến thể
             variantModal.hide();
-            
+
             // Xóa backdrop nếu còn
             const backdrop = document.querySelector('.modal-backdrop');
             if (backdrop) {
@@ -143,20 +143,20 @@ $combo = array("lẻ", "combo");
                 const valueContainer = group.querySelector('.variant-values-container');
                 const newValueDiv = document.createElement('div');
                 newValueDiv.className = 'variant-value d-flex align-items-center gap-2 mb-2';
-                
+
                 // Tạo select mới với các giá trị tương ứng
                 const select = document.createElement('select');
                 select.className = 'form-control';
                 select.required = true;
                 select.name = `variant_values[${Array.from(variantTypesContainer.children).indexOf(group)}][]`;
-                
+
                 select.innerHTML = '<option value="">Chọn giá trị</option>';
                 if (variantValuesMap[variantType]) {
                     variantValuesMap[variantType].forEach(value => {
                         select.innerHTML += `<option value="${value}">${value}</option>`;
                     });
                 }
-                
+
                 newValueDiv.innerHTML = `
                     <button type="button" class="btn btn-danger btn-sm remove-value">
                         <i class="bi bi-trash"></i>
@@ -180,13 +180,13 @@ $combo = array("lẻ", "combo");
         // Thêm sự kiện cho nút "Thêm phân loại hàng"
         document.getElementById('addVariantType').addEventListener('click', function () {
             const newGroup = variantTypesContainer.querySelector('.variant-type-group').cloneNode(true);
-            
+
             // Reset các giá trị
             newGroup.querySelectorAll('select').forEach(select => {
                 select.value = '';
                 if (select.classList.contains('variant-type')) {
                     // Gán lại sự kiện change cho select phân loại mới
-                    select.addEventListener('change', function() {
+                    select.addEventListener('change', function () {
                         updateVariantValues(this);
                     });
                 }
@@ -213,8 +213,8 @@ $combo = array("lẻ", "combo");
         function updateVariantValues(selectElement) {
             const selectedType = selectElement.value;
             const valueSelect = selectElement.closest('.variant-type-group')
-                                           .querySelector('.variant-value select');
-            
+                .querySelector('.variant-value select');
+
             // Xóa tất cả các tùy chọn hiện tại
             valueSelect.innerHTML = '<option value="">Chọn giá trị</option>';
 
@@ -341,7 +341,7 @@ $combo = array("lẻ", "combo");
 
         // Gán sự kiện change cho tất cả các select phân loại ban đầu
         document.querySelectorAll('.variant-type').forEach(select => {
-            select.addEventListener('change', function() {
+            select.addEventListener('change', function () {
                 updateVariantValues(this);
             });
         });

@@ -239,14 +239,16 @@ class HomeController extends BaseController
         }
     }
 
-    public function about() {
+    public function about()
+    {
         $this->view('about', [
             'title' => 'Giới thiệu',
             'error' => 'Có lỗi xảy ra khi tải dữ liệu'
         ]);
     }
 
-    public function contact() {
+    public function contact()
+    {
         $this->view('contact', [
             'title' => 'Liên hệ',
             'error' => 'Có lỗi xảy ra khi tải dữ liệu'

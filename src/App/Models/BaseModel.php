@@ -74,7 +74,7 @@ class BaseModel
         return $stmt->execute(['id' => $id]);
     }
 
-    public function updatePassword($id, $hashedPassword) 
+    public function updatePassword($id, $hashedPassword)
     {
         try {
             $sql = "UPDATE {$this->table} SET password = :password WHERE id = :id";

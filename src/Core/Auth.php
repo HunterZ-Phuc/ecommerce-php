@@ -14,7 +14,7 @@ class Auth
     public function login($userId, $username, $avatar, $role)
     {
         $_SESSION['user_id'] = $userId;
-        $_SESSION['user_name'] = $username; 
+        $_SESSION['user_name'] = $username;
         $_SESSION['avatar'] = $avatar;
         $_SESSION['user_role'] = $role;
     }
@@ -40,7 +40,7 @@ class Auth
         return $_SESSION['user_role'] ?? null;
     }
 
-    public function getAvatar() 
+    public function getAvatar()
     {
         return $_SESSION['avatar'] ?? null;
     }

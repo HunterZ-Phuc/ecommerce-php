@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <title>Đơn hàng #<?= $order['id'] ?></title>
@@ -10,33 +11,42 @@
             margin: 0;
             padding: 20px;
         }
+
         .header {
             text-align: center;
             margin-bottom: 20px;
         }
+
         .info-section {
             margin-bottom: 20px;
         }
+
         .info-section h3 {
             margin-bottom: 10px;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
         }
-        th, td {
+
+        th,
+        td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
         }
+
         th {
             background-color: #f5f5f5;
         }
+
         .total {
             text-align: right;
             margin-top: 20px;
         }
+
         @media print {
             .no-print {
                 display: none;
@@ -44,6 +54,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="header">
         <h2>ĐƠN HÀNG #<?= $order['id'] ?></h2>
@@ -60,7 +71,7 @@
     <div class="info-section">
         <h3>Thông tin đơn hàng</h3>
         <p>
-            <strong>Phương thức thanh toán:</strong> 
+            <strong>Phương thức thanh toán:</strong>
             <?= $order['paymentMethod'] === 'CASH_ON_DELIVERY' ? 'Tiền mặt khi nhận hàng' : 'Chuyển khoản ngân hàng' ?>
         </p>
         <p>
@@ -102,7 +113,8 @@
             </tr>
         </thead>
         <tbody>
-            <?php $i = 1; foreach ($order['items'] as $item): ?>
+            <?php $i = 1;
+            foreach ($order['items'] as $item): ?>
                 <tr>
                     <td><?= $i++ ?></td>
                     <td>
@@ -128,4 +140,5 @@
         <button onclick="window.close()">Đóng</button>
     </div>
 </body>
-</html> 
+
+</html>

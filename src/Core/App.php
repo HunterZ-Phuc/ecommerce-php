@@ -16,7 +16,7 @@ class App
         try {
             // Loại bỏ tên thư mục gốc khỏi path
             $path = preg_replace('/^\/ecommerce-php/', '', $path);
-            
+
             // Nếu path rỗng, đặt thành '/'
             if (empty($path)) {
                 $path = '/';

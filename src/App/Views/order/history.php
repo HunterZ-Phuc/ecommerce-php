@@ -45,14 +45,16 @@
                                             </td>
                                             <td>
                                                 <div class="btn-group">
-                                                    <a href="/ecommerce-php/order/detail/<?= $order['id'] ?>" 
-                                                       class="btn btn-sm btn-outline-primary">
+                                                    <a href="/ecommerce-php/order/detail/<?= $order['id'] ?>"
+                                                        class="btn btn-sm btn-outline-primary">
                                                         Chi tiết
                                                     </a>
-                                                    <?php if ($order['paymentMethod'] === 'QR_TRANSFER' && 
-                                                              $order['paymentStatus'] === 'PENDING'): ?>
-                                                        <a href="/ecommerce-php/order/payment/<?= $order['id'] ?>" 
-                                                           class="btn btn-sm btn-primary">
+                                                    <?php if (
+                                                        $order['paymentMethod'] === 'QR_TRANSFER' &&
+                                                        $order['paymentStatus'] === 'PENDING'
+                                                    ): ?>
+                                                        <a href="/ecommerce-php/order/payment/<?= $order['id'] ?>"
+                                                            class="btn btn-sm btn-primary">
                                                             Thanh toán
                                                         </a>
                                                     <?php endif; ?>
@@ -69,8 +71,7 @@
                                 <ul class="pagination justify-content-center">
                                     <?php if ($currentPage > 1): ?>
                                         <li class="page-item">
-                                            <a class="page-link" 
-                                               href="/ecommerce-php/order/history?page=<?= $currentPage - 1 ?>">
+                                            <a class="page-link" href="/ecommerce-php/order/history?page=<?= $currentPage - 1 ?>">
                                                 Trước
                                             </a>
                                         </li>
@@ -78,8 +79,7 @@
 
                                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                                         <li class="page-item <?= $i === $currentPage ? 'active' : '' ?>">
-                                            <a class="page-link" 
-                                               href="/ecommerce-php/order/history?page=<?= $i ?>">
+                                            <a class="page-link" href="/ecommerce-php/order/history?page=<?= $i ?>">
                                                 <?= $i ?>
                                             </a>
                                         </li>
@@ -87,8 +87,7 @@
 
                                     <?php if ($currentPage < $totalPages): ?>
                                         <li class="page-item">
-                                            <a class="page-link" 
-                                               href="/ecommerce-php/order/history?page=<?= $currentPage + 1 ?>">
+                                            <a class="page-link" href="/ecommerce-php/order/history?page=<?= $currentPage + 1 ?>">
                                                 Sau
                                             </a>
                                         </li>

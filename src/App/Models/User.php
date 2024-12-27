@@ -15,10 +15,10 @@ class User extends BaseModel
         try {
             // Đảm bảo các trường bắt buộc
             $requiredFields = ['username', 'fullName', 'dateOfBirth', 'sex', 'phone', 'email', 'password'];
-            
+
             // Set role mặc định
             $data['eRole'] = 'USER';
-            
+
             foreach ($requiredFields as $field) {
                 if (!isset($data[$field])) {
                     throw new \Exception("Missing required field: {$field}");
@@ -171,27 +171,27 @@ class User extends BaseModel
                     FROM {$this->table} u
                     LEFT JOIN orders o ON u.id = o.userId
                     WHERE u.eRole = 'USER'";
-            
+
             $params = [];
-            
+
             if (!empty($search)) {
                 $sql .= " AND (u.username LIKE :search OR u.fullName LIKE :search)";
                 $params[':search'] = "%$search%";
             }
-            
+
             $sql .= " GROUP BY u.id
                      ORDER BY u.createdAt DESC
                      LIMIT :limit OFFSET :offset";
-            
+
             $stmt = $this->db->prepare($sql);
-            
+
             foreach ($params as $key => $value) {
                 $stmt->bindValue($key, $value);
             }
-            
-            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
-            $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
-            
+
+            $stmt->bindValue(':limit', (int) $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int) $offset, PDO::PARAM_INT);
+
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
@@ -213,11 +213,11 @@ class User extends BaseModel
             }
 
             $stmt = $this->db->prepare($sql);
-            
+
             foreach ($params as $key => $value) {
                 $stmt->bindValue($key, $value);
             }
-            
+
             $stmt->execute();
             return $stmt->fetchColumn();
         } catch (PDOException $e) {

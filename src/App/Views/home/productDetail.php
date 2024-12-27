@@ -76,7 +76,7 @@ error_log("View received product data: " . json_encode($product));
 
             <!-- Mua ngay -->
             <button class="btn btn-primary me-2">Mua ngay</button>
-            
+
             <!-- Form thêm vào giỏ hàng -->
             <form id="addToCartForm" class="mt-3" action="/ecommerce-php/cart/add" method="POST">
                 <input type="hidden" name="variantId" id="selectedVariantId">
@@ -130,7 +130,7 @@ error_log("View received product data: " . json_encode($product));
                     style: 'currency',
                     currency: 'VND'
                 }).format(matchedVariant.price);
-                
+
                 // Cập nhật số lượng tối đa có thể mua
                 quantityInput.max = matchedVariant.quantity;
                 if (parseInt(quantityInput.value) > matchedVariant.quantity) {
@@ -139,7 +139,7 @@ error_log("View received product data: " . json_encode($product));
 
                 // Cập nhật variant ID cho form
                 selectedVariantIdInput.value = matchedVariant.id;
-                
+
                 // Kích hoạt nút thêm vào giỏ hàng
                 addToCartBtn.disabled = false;
 
@@ -156,23 +156,23 @@ error_log("View received product data: " . json_encode($product));
 
     function findMatchingVariant() {
         // Kiểm tra xem đã chọn đủ các loại biến thể chưa
-        const variantTypes = new Set(variants.flatMap(v => 
+        const variantTypes = new Set(variants.flatMap(v =>
             v.combinations.map(c => c.typeName)
         ));
-        
+
         if (Object.keys(selectedOptions).length !== variantTypes.size) {
             return null;
         }
 
         return variants.find(variant => {
-            return variant.combinations.every(combination => 
+            return variant.combinations.every(combination =>
                 selectedOptions[combination.typeName] === combination.value
             );
         });
     }
 
     // Xử lý form submit
-    document.getElementById('addToCartForm').addEventListener('submit', function(e) {
+    document.getElementById('addToCartForm').addEventListener('submit', function (e) {
         e.preventDefault(); // Ngăn chặn hành động mặc định của form
 
         const formData = new FormData(this); // Lấy dữ liệu từ form
@@ -181,18 +181,18 @@ error_log("View received product data: " . json_encode($product));
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message); // Hiển thị thông báo thành công
-            } else {
-                alert(data.message); // Hiển thị thông báo lỗi
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Đã xảy ra lỗi, vui lòng thử lại.');
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message); // Hiển thị thông báo thành công
+                } else {
+                    alert(data.message); // Hiển thị thông báo lỗi
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi, vui lòng thử lại.');
+            });
     });
 </script>
 

@@ -3,6 +3,7 @@
         .contact-info {
             margin-bottom: 30px;
         }
+
         .contact-form {
             margin-top: 30px;
         }
@@ -12,7 +13,7 @@
 <body>
     <div class="container">
         <h1 class="mt-5">Liên Hệ Chúng Tôi</h1>
-        
+
         <div class="contact-info">
             <h2>Thông Tin Liên Hệ</h2>
             <p><strong>Địa chỉ:</strong> 19 Lê Duẩn, phường Quyết Tâm, thành phố Sơn La.</p>
@@ -41,7 +42,10 @@
 
         <div class="map mt-5">
             <h2>Bản Đồ</h2>
-            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3717.0438071760104!2d103.9391361753087!3d21.309285280411192!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31328b2de8124fc1%3A0x854e8fc5957d1f6c!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBUw6J5IELhuq9j!5e0!3m2!1svi!2s!4v1734753253953!5m2!1svi!2s" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3717.0438071760104!2d103.9391361753087!3d21.309285280411192!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31328b2de8124fc1%3A0x854e8fc5957d1f6c!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBUw6J5IELhuq9j!5e0!3m2!1svi!2s!4v1734753253953!5m2!1svi!2s"
+                width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
     </div>
 </body>

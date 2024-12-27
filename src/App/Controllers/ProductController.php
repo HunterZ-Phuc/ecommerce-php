@@ -40,7 +40,7 @@ class ProductController extends BaseController
     {
         // Lấy các tham số tìm kiếm và phân trang
         $search = $_GET['search'] ?? '';
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
         $limit = 15; // Số sản phẩm trên mỗi trang
 
         // Lấy tổng số sản phẩm và danh sách sản phẩm theo điều kiện

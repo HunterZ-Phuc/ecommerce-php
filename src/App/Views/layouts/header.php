@@ -15,11 +15,12 @@
         .navbar-nav .nav-link {
             color: #0BA215;
             font-weight: bold;
-            text-shadow: 
-                -1px -1px 0 white,  
+            text-shadow:
+                -1px -1px 0 white,
                 1px -1px 0 white,
                 -1px 1px 0 white,
-                1px 1px 0 white; /* Tạo viền trắng quanh chữ */
+                1px 1px 0 white;
+            /* Tạo viền trắng quanh chữ */
         }
 
         .navbar-nav .nav-item:hover .nav-link {

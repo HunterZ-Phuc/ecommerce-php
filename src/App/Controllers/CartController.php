@@ -43,7 +43,7 @@ class CartController extends BaseController
 
             $userId = $this->auth->getUserId();
             $variantId = $_POST['variantId'] ?? null;
-            $quantity = (int)($_POST['quantity'] ?? 1);
+            $quantity = (int) ($_POST['quantity'] ?? 1);
 
             if (!$variantId) {
                 throw new Exception('Vui lòng chọn biến thể sản phẩm');
@@ -60,7 +60,7 @@ class CartController extends BaseController
             }
 
             $this->cartModel->addToCart($userId, $variantId, $quantity);
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Thêm vào giỏ hàng thành công'
@@ -84,7 +84,7 @@ class CartController extends BaseController
 
             $userId = $this->auth->getUserId();
             $variantId = $_POST['variantId'] ?? null;
-            $quantity = (int)($_POST['quantity'] ?? 0);
+            $quantity = (int) ($_POST['quantity'] ?? 0);
 
             if (!$variantId || $quantity <= 0) {
                 throw new Exception('Dữ liệu không hợp lệ');
@@ -97,10 +97,10 @@ class CartController extends BaseController
             }
 
             $this->cartModel->updateQuantity($userId, $variantId, $quantity);
-            
+
             // Lấy thông tin giỏ hàng mới
             $cartTotal = $this->cartModel->getCartTotal($userId);
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Cập nhật giỏ hàng thành công',
@@ -131,10 +131,10 @@ class CartController extends BaseController
             }
 
             $this->cartModel->removeFromCart($userId, $variantId);
-            
+
             // Lấy thông tin giỏ hàng mới
             $cartTotal = $this->cartModel->getCartTotal($userId);
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Xóa sản phẩm thành công',
@@ -159,7 +159,7 @@ class CartController extends BaseController
 
             $userId = $this->auth->getUserId();
             $this->cartModel->clearCart($userId);
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Xóa giỏ hàng thành công'
@@ -192,7 +192,7 @@ class CartController extends BaseController
 
             // Lấy thông tin sản phẩm đã chọn
             $cartItems = $this->cartModel->getSelectedCartItems($userId, $selectedVariantIds);
-            
+
             error_log('Cart Items: ' . print_r($cartItems, true));
 
             if (empty($cartItems)) {
@@ -218,4 +218,4 @@ class CartController extends BaseController
             ], 400);
         }
     }
-} 
+}

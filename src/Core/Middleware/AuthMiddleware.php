@@ -7,12 +7,12 @@ class AuthMiddleware
     {
         if (!isset($_SESSION['user_id'])) {
             $role = $allowedRoles[0] ?? '';
-            switch($role) {
+            switch ($role) {
                 case 'ADMIN':
                     header('Location: /ecommerce-php/admin-login');
                     break;
                 case 'EMPLOYEE':
-                    header('Location: /ecommerce-php/employee-login'); 
+                    header('Location: /ecommerce-php/employee-login');
                     break;
                 default:
                     header('Location: /ecommerce-php/login');
@@ -30,4 +30,4 @@ class AuthMiddleware
 
         return true;
     }
-} 
+}

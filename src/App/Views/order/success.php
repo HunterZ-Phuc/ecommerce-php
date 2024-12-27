@@ -16,12 +16,15 @@ error_log('Order data: ' . print_r($order ?? 'No order data', true));
                         </div>
 
                         <!-- Thông tin thanh toán -->
-                        <div class="alert <?= $order['paymentMethod'] === 'CASH_ON_DELIVERY' ? 'alert-info' : 'alert-warning' ?>">
+                        <div
+                            class="alert <?= $order['paymentMethod'] === 'CASH_ON_DELIVERY' ? 'alert-info' : 'alert-warning' ?>">
                             <h6 class="mb-2">Phương thức thanh toán:</h6>
                             <?php if ($order['paymentMethod'] === 'CASH_ON_DELIVERY'): ?>
-                                <p class="mb-0">Thanh toán khi nhận hàng (COD): <strong><?= number_format($order['totalAmount']) ?>đ</strong></p>
+                                <p class="mb-0">Thanh toán khi nhận hàng (COD):
+                                    <strong><?= number_format($order['totalAmount']) ?>đ</strong></p>
                             <?php else: ?>
-                                <p class="mb-0">Chuyển khoản qua QR: <strong><?= number_format($order['totalAmount']) ?>đ</strong></p>
+                                <p class="mb-0">Chuyển khoản qua QR:
+                                    <strong><?= number_format($order['totalAmount']) ?>đ</strong></p>
                                 <?php if ($order['paymentStatus'] === 'PENDING'): ?>
                                     <a href="/ecommerce-php/order/payment/<?= $order['id'] ?>" class="btn btn-primary mt-2">
                                         Thanh toán ngay
@@ -46,9 +49,9 @@ error_log('Order data: ' . print_r($order ?? 'No order data', true));
                                 <h6>Chi tiết sản phẩm:</h6>
                                 <?php foreach ($order['items'] as $item): ?>
                                     <div class="d-flex border-bottom py-3">
-                                        <img src="<?= '/ecommerce-php/public/' . htmlspecialchars($item['imageUrl']) ?>" 
-                                             alt="<?= htmlspecialchars($item['productName']) ?>" 
-                                             class="img-thumbnail me-3" style="width: 80px; height: 80px; object-fit: cover;">
+                                        <img src="<?= '/ecommerce-php/public/' . htmlspecialchars($item['imageUrl']) ?>"
+                                            alt="<?= htmlspecialchars($item['productName']) ?>" class="img-thumbnail me-3"
+                                            style="width: 80px; height: 80px; object-fit: cover;">
                                         <div class="flex-grow-1">
                                             <h6 class="mb-1"><?= htmlspecialchars($item['productName']) ?></h6>
                                             <?php if (!empty($item['variantInfo'])): ?>

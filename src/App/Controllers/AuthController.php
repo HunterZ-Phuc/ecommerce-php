@@ -70,7 +70,7 @@ class AuthController extends BaseController
                 $password = $_POST['password'] ?? '';
 
                 $admin = $this->adminModel->findByUsername($username);
-                
+
                 if (!$admin) {
                     throw new Exception('Thông tin đăng nhập không đúng');
                 }

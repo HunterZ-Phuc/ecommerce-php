@@ -23,15 +23,15 @@
                         <h6>Sản phẩm</h6>
                         <?php foreach ($order['items'] as $item): ?>
                             <div class="d-flex mb-3">
-                                <img src="<?= '/ecommerce-php/public/' . htmlspecialchars($item['imageUrl']) ?>" 
-                                     alt="<?= htmlspecialchars($item['productName']) ?>" 
-                                     class="img-thumbnail me-3" style="width: 100px;">
+                                <img src="<?= '/ecommerce-php/public/' . htmlspecialchars($item['imageUrl']) ?>"
+                                    alt="<?= htmlspecialchars($item['productName']) ?>" class="img-thumbnail me-3"
+                                    style="width: 100px;">
                                 <div>
                                     <h6 class="mb-0"><?= htmlspecialchars($item['productName']) ?></h6>
                                     <small class="text-muted">
                                         <?php if (!empty($item['variantCombinations'])): ?>
                                             <?php foreach ($item['variantCombinations'] as $combination): ?>
-                                                <?= htmlspecialchars($combination['typeName']) ?>: 
+                                                <?= htmlspecialchars($combination['typeName']) ?>:
                                                 <?= htmlspecialchars($combination['value']) ?><br>
                                             <?php endforeach; ?>
                                         <?php endif; ?>
@@ -50,9 +50,9 @@
                     <div class="mb-4">
                         <h6>Thanh toán</h6>
                         <p class="mb-1">
-                            <strong>Phương thức:</strong> 
-                            <?= $order['paymentMethod'] === 'COD' ? 'Thanh toán khi nhận hàng' : 
-                               ($order['paymentMethod'] === 'BANKING' ? 'Chuyển khoản ngân hàng' : $order['paymentMethod']) ?>
+                            <strong>Phương thức:</strong>
+                            <?= $order['paymentMethod'] === 'COD' ? 'Thanh toán khi nhận hàng' :
+                                ($order['paymentMethod'] === 'BANKING' ? 'Chuyển khoản ngân hàng' : $order['paymentMethod']) ?>
                         </p>
                         <p class="mb-1">
                             <strong>Trạng thái:</strong>
@@ -62,8 +62,7 @@
                         </p>
                         <?php if ($order['paymentMethod'] === 'BANKING' && $order['paymentStatus'] === 'PENDING'): ?>
                             <div class="mt-3">
-                                <a href="/ecommerce-php/order/payment/<?= $order['id'] ?>" 
-                                   class="btn btn-primary btn-sm">
+                                <a href="/ecommerce-php/order/payment/<?= $order['id'] ?>" class="btn btn-primary btn-sm">
                                     Thanh toán ngay
                                 </a>
                             </div>
@@ -79,26 +78,27 @@
                     </div>
                     <?php if (in_array($order['orderStatus'], ['PENDING', 'PROCESSING', 'CONFIRMED'])): ?>
                         <form action="/ecommerce-php/order/cancel/<?= $order['id'] ?>" method="POST" class="d-inline">
-                            <button type="submit" class="btn btn-danger" onclick="return confirm('Bạn có chắc muốn hủy đơn hàng này?')">
+                            <button type="submit" class="btn btn-danger"
+                                onclick="return confirm('Bạn có chắc muốn hủy đơn hàng này?')">
                                 Hủy đơn hàng
                             </button>
                         </form>
                     <?php endif; ?>
 
                     <?php if ($order['orderStatus'] === 'SHIPPING'): ?>
-                        <form action="/ecommerce-php/order/confirm-delivery/<?= $order['id'] ?>" method="POST" class="d-inline">
+                        <form action="/ecommerce-php/order/confirm-delivery/<?= $order['id'] ?>" method="POST"
+                            class="d-inline">
                             <input type="hidden" name="orderId" value="<?= $order['id'] ?>">
                             <input type="hidden" name="status" value="DELIVERED">
-                            <button type="submit" class="btn btn-success" 
-                                    onclick="return confirm('Xác nhận đã nhận hàng và thanh toán?')">
+                            <button type="submit" class="btn btn-success"
+                                onclick="return confirm('Xác nhận đã nhận hàng và thanh toán?')">
                                 <i class="bi bi-check-circle"></i> Xác nhận đã nhận hàng và thanh toán
                             </button>
                         </form>
                     <?php endif; ?>
 
                     <?php if ($order['orderStatus'] === 'SHIPPING'): ?>
-                        <button type="button" class="btn btn-warning" 
-                                data-bs-toggle="modal" data-bs-target="#returnModal">
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#returnModal">
                             Yêu cầu hoàn trả
                         </button>
                     <?php endif; ?>
@@ -136,36 +136,36 @@
 </div>
 
 <style>
-.timeline {
-    position: relative;
-    padding-left: 30px;
-}
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
 
-.timeline-item {
-    position: relative;
-    padding-bottom: 1.5rem;
-}
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
 
-.timeline-marker {
-    position: absolute;
-    left: -30px;
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    background: #007bff;
-    border: 3px solid #fff;
-    box-shadow: 0 0 0 1px #007bff;
-}
+    .timeline-marker {
+        position: absolute;
+        left: -30px;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: #007bff;
+        border: 3px solid #fff;
+        box-shadow: 0 0 0 1px #007bff;
+    }
 
-.timeline-item:not(:last-child):before {
-    content: '';
-    position: absolute;
-    left: -23px;
-    top: 15px;
-    height: 100%;
-    width: 2px;
-    background: #007bff;
-}
+    .timeline-item:not(:last-child):before {
+        content: '';
+        position: absolute;
+        left: -23px;
+        top: 15px;
+        height: 100%;
+        width: 2px;
+        background: #007bff;
+    }
 </style>
 
 <!-- Modal yêu cầu hoàn trả -->

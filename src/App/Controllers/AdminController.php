@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Product;
+use Exception;
 
 class AdminController extends BaseController
 {
@@ -25,7 +26,7 @@ class AdminController extends BaseController
         $this->productModel = new Product();
     }
 
-    
+
     public function index()
     {
         // Điều hướng từ /admin sang /admin/dashboard
@@ -36,8 +37,8 @@ class AdminController extends BaseController
     public function dashboard()
     {
         // Lấy thống kê tổng quan
-         $totalOrders = $this->orderModel->getTotalOrders();
-         $monthlyRevenue = $this->orderModel->getCurrentMonthRevenue();
+        $totalOrders = $this->orderModel->getTotalOrders();
+        $monthlyRevenue = $this->orderModel->getCurrentMonthRevenue();
         $totalCustomers = $this->userModel->getTotalCustomers();
         $lowStockProducts = $this->productModel->getLowStockCount();
 
@@ -138,7 +139,7 @@ class AdminController extends BaseController
     // View quản lý người dùng
     public function users()
     {
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
         $limit = 10;
         $search = $_GET['search'] ?? '';
 
@@ -165,17 +166,17 @@ class AdminController extends BaseController
     public function exportUsers()
     {
         $users = $this->userModel->getAllUsersWithStats();
-        
+
         // Set headers for CSV download
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename=danh_sach_nguoi_dung_' . date('Y-m-d') . '.csv');
-        
+
         // Create file pointer connected to output stream
         $output = fopen('php://output', 'w');
-        
+
         // Add UTF-8 BOM for Excel to display Vietnamese correctly
-        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
-        
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
         // Add headers
         fputcsv($output, [
             'ID',
@@ -187,7 +188,7 @@ class AdminController extends BaseController
             'Số đơn hàng',
             'Tổng chi tiêu'
         ]);
-        
+
         // Add data
         foreach ($users as $user) {
             fputcsv($output, [
@@ -201,7 +202,7 @@ class AdminController extends BaseController
                 number_format($user['totalSpent']) . 'đ'
             ]);
         }
-        
+
         fclose($output);
         exit;
     }

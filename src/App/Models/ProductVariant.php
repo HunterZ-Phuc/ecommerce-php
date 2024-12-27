@@ -5,7 +5,7 @@ namespace App\Models;
 class ProductVariant extends BaseModel
 {
     protected $table = 'product_variants';
-    
+
     // Tạo biến thể sản phẩm
     public function create($data)
     {
@@ -38,16 +38,16 @@ class ProductVariant extends BaseModel
             throw new \Exception('Lỗi database khi tạo biến thể: ' . $e->getMessage());
         }
     }
-    
-        // Lấy tất cả biến thể theo ID sản phẩm
-        public function findAllByProductId($productId)
-        {
-            $sql = "SELECT * FROM {$this->table} WHERE productId = :productId";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute(['productId' => $productId]);
-            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        }
-        
+
+    // Lấy tất cả biến thể theo ID sản phẩm
+    public function findAllByProductId($productId)
+    {
+        $sql = "SELECT * FROM {$this->table} WHERE productId = :productId";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['productId' => $productId]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
     // Cập nhật biến thể sản phẩm
     public function update($id, $data)
     {
@@ -101,12 +101,12 @@ class ProductVariant extends BaseModel
     }
 
     // Cập nhật tồn kho biến thể sản phẩm
-    public function updateStock($variantId, $newQuantity) 
+    public function updateStock($variantId, $newQuantity)
     {
         $sql = "UPDATE product_variants 
                 SET quantity = :quantity 
                 WHERE id = :id";
-                
+
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             'quantity' => $newQuantity,
@@ -115,7 +115,8 @@ class ProductVariant extends BaseModel
     }
 
     // Lấy biến thể theo ID biến thể
-    public function getVariantWithDetails($variantId) {
+    public function getVariantWithDetails($variantId)
+    {
         $sql = "SELECT pv.*, 
                 GROUP_CONCAT(DISTINCT pi.imageUrl) as images,
                 GROUP_CONCAT(DISTINCT CONCAT(vt.name, ':', vv.value)) as combinations
@@ -126,7 +127,7 @@ class ProductVariant extends BaseModel
                 LEFT JOIN variant_types vt ON vv.variantTypeId = vt.id
                 WHERE pv.id = :variantId
                 GROUP BY pv.id";
-                
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['variantId' => $variantId]);
         return $stmt->fetch(\PDO::FETCH_ASSOC);

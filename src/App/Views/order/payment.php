@@ -6,8 +6,9 @@
                     <h5 class="mb-0">Thanh toán đơn hàng #<?= $order['id'] ?></h5>
                 </div>
                 <div class="card-body text-center">
-                    <h6 class="mb-4">Vui lòng quét mã QR để thanh toán số tiền: <?= number_format($order['totalAmount']) ?>đ</h6>
-                    
+                    <h6 class="mb-4">Vui lòng quét mã QR để thanh toán số tiền:
+                        <?= number_format($order['totalAmount']) ?>đ</h6>
+
                     <div class="mb-4">
                         <img src="<?= $order['qrImage'] ?>" alt="QR Code" class="img-fluid" style="max-width: 300px;">
                     </div>

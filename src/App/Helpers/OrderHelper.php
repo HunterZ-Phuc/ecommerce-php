@@ -1,8 +1,10 @@
 <?php
 namespace App\Helpers;
 // Sửa 1
-class OrderHelper {
-    public static function getOrderStatusText($status) {
+class OrderHelper
+{
+    public static function getOrderStatusText($status)
+    {
         switch ($status) {
             case 'PENDING':
                 return 'Chờ xử lý';
@@ -31,7 +33,8 @@ class OrderHelper {
         }
     }
 
-    public static function getOrderStatusClass($status) {
+    public static function getOrderStatusClass($status)
+    {
         switch ($status) {
             case 'PENDING':
                 return 'bg-warning';
@@ -54,7 +57,8 @@ class OrderHelper {
         }
     }
 
-    public static function getPaymentStatusText($status) {
+    public static function getPaymentStatusText($status)
+    {
         switch ($status) {
             case 'PENDING':
                 return 'Chờ thanh toán';
@@ -67,7 +71,8 @@ class OrderHelper {
         }
     }
 
-    public static function getPaymentStatusClass($status) {
+    public static function getPaymentStatusClass($status)
+    {
         switch ($status) {
             case 'PENDING':
                 return 'bg-warning';

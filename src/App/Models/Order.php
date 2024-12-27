@@ -16,7 +16,7 @@ class Order extends BaseModel
         try {
             $sql = "INSERT INTO orders (userId, addressId, totalAmount, paymentMethod, orderStatus, paymentStatus) 
                     VALUES (:userId, :addressId, :totalAmount, :paymentMethod, :orderStatus, :paymentStatus)";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute($data);
             return $this->db->lastInsertId();
@@ -31,7 +31,7 @@ class Order extends BaseModel
         try {
             $sql = "INSERT INTO order_items (orderId, variantId, quantity, price) 
                     VALUES (:orderId, :variantId, :quantity, :price)";
-            
+
             $stmt = $this->db->prepare($sql);
             return $stmt->execute($data);
         } catch (PDOException $e) {
@@ -45,7 +45,7 @@ class Order extends BaseModel
         try {
             $sql = "INSERT INTO payments (orderId, amount, paymentMethod, paymentStatus) 
                     VALUES (:orderId, :amount, :paymentMethod, :paymentStatus)";
-            
+
             $stmt = $this->db->prepare($sql);
             return $stmt->execute($data);
         } catch (PDOException $e) {
@@ -54,7 +54,7 @@ class Order extends BaseModel
     }
 
     // Kiểm tra xem trạng thái có thể được cập nhật không
-    public function canUpdateStatus($currentStatus, $newStatus) 
+    public function canUpdateStatus($currentStatus, $newStatus)
     {
         $validTransitions = [
             'PENDING' => ['PROCESSING', 'CANCELLED'],
@@ -195,7 +195,7 @@ class Order extends BaseModel
         try {
             $sql = "INSERT INTO order_history (orderId, status, note, createdBy) 
                     VALUES (:orderId, :status, :note, :createdBy)";
-            
+
             $stmt = $this->db->prepare($sql);
             return $stmt->execute($data);
         } catch (PDOException $e) {
@@ -235,7 +235,7 @@ class Order extends BaseModel
                         note = :note,
                         updatedAt = CURRENT_TIMESTAMP
                     WHERE orderId = :orderId";
-                    
+
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
                 'status' => $status,
@@ -253,7 +253,7 @@ class Order extends BaseModel
         try {
             $sql = "UPDATE payments SET qrImage = :qrImage 
                     WHERE orderId = :orderId";
-            
+
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
                 'orderId' => $orderId,
@@ -282,7 +282,7 @@ class Order extends BaseModel
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
-            
+
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             throw new Exception("Lỗi khi lấy danh sách đơn hàng: " . $e->getMessage());
@@ -361,7 +361,7 @@ class Order extends BaseModel
                     $statuses = explode(',', $order['statusHistory']);
                     $notes = explode(',', $order['statusNotes']);
                     $dates = explode(',', $order['statusDates']);
-                    
+
                     for ($i = 0; $i < count($statuses); $i++) {
                         $statusHistory[] = [
                             'status' => $statuses[$i],
@@ -479,7 +479,7 @@ class Order extends BaseModel
                     $statuses = explode(',', $order['statusHistory']);
                     $notes = explode(',', $order['statusNotes']);
                     $dates = explode(',', $order['statusDates']);
-                    
+
                     for ($i = 0; $i < count($statuses); $i++) {
                         $statusHistory[] = [
                             'status' => $statuses[$i],
@@ -502,14 +502,14 @@ class Order extends BaseModel
     {
         try {
             $this->db->beginTransaction();
-            
+
             // Cập nhật trạng thái đơn hàng
             $sql = "UPDATE orders SET 
                     orderStatus = 'RETURN_REQUEST',
                     returnReason = :reason,
                     returnRequestDate = CURRENT_TIMESTAMP
                     WHERE id = :orderId";
-                    
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 'orderId' => $orderId,
@@ -564,9 +564,9 @@ class Order extends BaseModel
                     GROUP BY DATE_FORMAT(createdAt, '%Y-%m')
                     ORDER BY createdAt DESC
                     LIMIT 12";
-            
+
             $result = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-            
+
             return [
                 'labels' => array_column($result, 'label'),
                 'values' => array_column($result, 'value')
@@ -586,9 +586,9 @@ class Order extends BaseModel
                         COUNT(*) as value
                     FROM {$this->table}
                     GROUP BY orderStatus";
-            
+
             $result = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-            
+
             return [
                 'labels' => array_map([$this, 'translateOrderStatus'], array_column($result, 'label')),
                 'values' => array_column($result, 'value')
@@ -612,10 +612,10 @@ class Order extends BaseModel
             'RETURN_REQUEST' => 'Yêu cầu trả hàng',
             'RETURNED' => 'Đã trả hàng'
         ];
-        
+
         return $translations[$status] ?? $status;
     }
-    
+
     // Lấy thông tin trạng thái đơn hàng
     private function getOrderStatusInfo($status)
     {
@@ -629,7 +629,7 @@ class Order extends BaseModel
             'RETURN_REQUEST' => ['color' => 'warning', 'text' => 'Yêu cầu trả hàng'],
             'RETURNED' => ['color' => 'secondary', 'text' => 'Đã trả hàng']
         ];
-        
+
         return $statusInfo[$status] ?? ['color' => 'secondary', 'text' => $status];
     }
 }

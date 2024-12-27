@@ -105,7 +105,7 @@ class Product extends BaseModel
             }
 
             $sql .= " GROUP BY p.id";
-            
+
             // Thêm ORDER BY để sắp xếp kết quả
             $sql .= " ORDER BY p.createdAt DESC";
 
@@ -174,7 +174,7 @@ class Product extends BaseModel
                     WHERE pv.quantity > 0 
                     AND pv.quantity <= :threshold
                     AND p.status = 'ON_SALE'";
-                    
+
             $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':threshold', $threshold, \PDO::PARAM_INT);
             $stmt->execute();
@@ -200,7 +200,7 @@ class Product extends BaseModel
         try {
             $offset = ($page - 1) * $limit;
             $params = [];
-            
+
             $sql = "SELECT DISTINCT p.* 
                     FROM products p
                     LEFT JOIN product_variants pv ON p.id = pv.productId";
@@ -222,7 +222,7 @@ class Product extends BaseModel
                     $stmt->bindValue($key, $value);
                 }
             }
-            
+
             $stmt->execute();
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\PDOException $e) {

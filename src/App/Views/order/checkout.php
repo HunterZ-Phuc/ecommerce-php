@@ -33,8 +33,8 @@ error_log('Selected Variant IDs: ' . print_r($selectedVariantIds, true));
                                 <option value="">Chọn địa chỉ giao hàng</option>
                                 <?php foreach ($addresses as $address): ?>
                                     <option value="<?= $address['id'] ?>">
-                                        <?= htmlspecialchars($address['fullName']) ?> - 
-                                        <?= htmlspecialchars($address['phoneNumber']) ?> - 
+                                        <?= htmlspecialchars($address['fullName']) ?> -
+                                        <?= htmlspecialchars($address['phoneNumber']) ?> -
                                         <?= htmlspecialchars($address['address']) ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -45,22 +45,23 @@ error_log('Selected Variant IDs: ' . print_r($selectedVariantIds, true));
                             <label class="form-label fw-bold">Phương thức thanh toán</label>
                             <div class="payment-methods">
                                 <div class="form-check border rounded p-3 mb-2">
-                                    <input class="form-check-input" type="radio" name="paymentMethod" 
-                                           value="CASH_ON_DELIVERY" id="cod" required>
+                                    <input class="form-check-input" type="radio" name="paymentMethod"
+                                        value="CASH_ON_DELIVERY" id="cod" required>
                                     <label class="form-check-label w-100" for="cod">
                                         <div class="d-flex align-items-center">
                                             <i class="fas fa-money-bill-wave me-2"></i>
                                             <div>
                                                 <strong>Thanh toán khi nhận hàng (COD)</strong>
-                                                <div class="text-muted small">Thanh toán bằng tiền mặt khi nhận hàng</div>
+                                                <div class="text-muted small">Thanh toán bằng tiền mặt khi nhận hàng
+                                                </div>
                                             </div>
                                         </div>
                                     </label>
                                 </div>
-                                
+
                                 <div class="form-check border rounded p-3">
-                                    <input class="form-check-input" type="radio" name="paymentMethod" 
-                                           value="QR_TRANSFER" id="qr" required>
+                                    <input class="form-check-input" type="radio" name="paymentMethod"
+                                        value="QR_TRANSFER" id="qr" required>
                                     <label class="form-check-label w-100" for="qr">
                                         <div class="d-flex align-items-center">
                                             <i class="fas fa-qrcode me-2"></i>
@@ -99,9 +100,9 @@ error_log('Selected Variant IDs: ' . print_r($selectedVariantIds, true));
                 <div class="card-body">
                     <?php foreach ($cartItems as $item): ?>
                         <div class="d-flex mb-3">
-                            <img src="<?= '/ecommerce-php/public/' . htmlspecialchars($item['imageUrl']) ?>" 
-                                 alt="<?= htmlspecialchars($item['productName']) ?>" 
-                                 class="img-fluid rounded" style="width: 80px;">
+                            <img src="<?= '/ecommerce-php/public/' . htmlspecialchars($item['imageUrl']) ?>"
+                                alt="<?= htmlspecialchars($item['productName']) ?>" class="img-fluid rounded"
+                                style="width: 80px;">
                             <div class="ms-3">
                                 <h6 class="mb-1"><?= htmlspecialchars($item['productName']) ?></h6>
                                 <p class="mb-0 text-muted">
@@ -128,26 +129,26 @@ error_log('Selected Variant IDs: ' . print_r($selectedVariantIds, true));
 </div>
 
 <script>
-document.getElementById('checkoutForm').addEventListener('submit', function(e) {
-    console.log('Form submitting...');
-    console.log('Session data:', <?php echo json_encode($_SESSION); ?>);
-    console.log('Selected items:', <?php echo json_encode($selectedItems ?? []); ?>);
-    
-    const addressId = document.querySelector('select[name="addressId"]').value;
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+    document.getElementById('checkoutForm').addEventListener('submit', function (e) {
+        console.log('Form submitting...');
+        console.log('Session data:', <?php echo json_encode($_SESSION); ?>);
+        console.log('Selected items:', <?php echo json_encode($selectedItems ?? []); ?>);
 
-    if (!addressId || !paymentMethod) {
-        e.preventDefault();
-        alert('Vui lòng điền đầy đủ thông tin');
-        return;
-    }
-});
+        const addressId = document.querySelector('select[name="addressId"]').value;
+        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+
+        if (!addressId || !paymentMethod) {
+            e.preventDefault();
+            alert('Vui lòng điền đầy đủ thông tin');
+            return;
+        }
+    });
 </script>
 
 <!-- Thêm div để hiển thị lỗi nếu có -->
 <?php if (isset($_SESSION['error'])): ?>
     <div class="alert alert-danger">
-        <?php 
+        <?php
         echo $_SESSION['error'];
         unset($_SESSION['error']);
         ?>

@@ -30,11 +30,8 @@
     <div class="col-md-8">
         <form action="" method="GET" class="d-flex gap-2">
             <div class="input-group">
-                <input type="text" 
-                       name="search" 
-                       class="form-control" 
-                       placeholder="Tìm kiếm sản phẩm..." 
-                       value="<?= htmlspecialchars($search ?? '') ?>">
+                <input type="text" name="search" class="form-control" placeholder="Tìm kiếm sản phẩm..."
+                    value="<?= htmlspecialchars($search ?? '') ?>">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-search"></i> Tìm kiếm
                 </button>
@@ -49,9 +46,9 @@
 </div>
 
 <style>
-.input-group {
-    flex: 1;
-}
+    .input-group {
+        flex: 1;
+    }
 </style>
 
 <table class="table table-striped">
@@ -120,33 +117,33 @@
 
 <!-- Thêm phân trang -->
 <?php if ($totalPages > 1): ?>
-<nav aria-label="Page navigation" class="mt-4">
-    <ul class="pagination justify-content-center">
-        <?php if ($currentPage > 1): ?>
-            <li class="page-item">
-                <a class="page-link" href="?page=<?= $currentPage - 1 ?>&search=<?= urlencode($search) ?>">
-                    Trước
-                </a>
-            </li>
-        <?php endif; ?>
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <?php if ($currentPage > 1): ?>
+                <li class="page-item">
+                    <a class="page-link" href="?page=<?= $currentPage - 1 ?>&search=<?= urlencode($search) ?>">
+                        Trước
+                    </a>
+                </li>
+            <?php endif; ?>
 
-        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-            <li class="page-item <?= $i === $currentPage ? 'active' : '' ?>">
-                <a class="page-link" href="?page=<?= $i ?>&search=<?= urlencode($search) ?>">
-                    <?= $i ?>
-                </a>
-            </li>
-        <?php endfor; ?>
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                <li class="page-item <?= $i === $currentPage ? 'active' : '' ?>">
+                    <a class="page-link" href="?page=<?= $i ?>&search=<?= urlencode($search) ?>">
+                        <?= $i ?>
+                    </a>
+                </li>
+            <?php endfor; ?>
 
-        <?php if ($currentPage < $totalPages): ?>
-            <li class="page-item">
-                <a class="page-link" href="?page=<?= $currentPage + 1 ?>&search=<?= urlencode($search) ?>">
-                    Sau
-                </a>
-            </li>
-        <?php endif; ?>
-    </ul>
-</nav>
+            <?php if ($currentPage < $totalPages): ?>
+                <li class="page-item">
+                    <a class="page-link" href="?page=<?= $currentPage + 1 ?>&search=<?= urlencode($search) ?>">
+                        Sau
+                    </a>
+                </li>
+            <?php endif; ?>
+        </ul>
+    </nav>
 <?php endif; ?>
 
 <?php

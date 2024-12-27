@@ -29,7 +29,7 @@ class Router
         // Tách query string khỏi URL
         $urlParts = explode('?', $url);
         $path = $urlParts[0];
-        
+
         // Nếu URL rỗng hoặc chỉ có '/', chuyển thành '/'
         if (empty($path)) {
             $path = '/';

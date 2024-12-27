@@ -55,7 +55,7 @@ abstract class BaseController
                 $defaultLayout = 'layouts/user_layout.php';
             } else {
                 // Nếu không có prefix nào, sử dụng layout mặc định
-              $defaultLayout = 'layouts/default_layout.php';
+                $defaultLayout = 'layouts/default_layout.php';
             }
             // Load layout mặc định
             require_once ROOT_PATH . "/src/App/Views/" . $defaultLayout;
@@ -99,7 +99,7 @@ abstract class BaseController
     {
         if (!$this->auth->isLoggedIn()) {
             $role = $allowedRoles[0] ?? '';
-            switch($role) {
+            switch ($role) {
                 case 'ADMIN':
                     $this->redirect('admin-login');
                     break;

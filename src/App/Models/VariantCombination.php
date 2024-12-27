@@ -42,7 +42,8 @@ class VariantCombination extends BaseModel
     }
 
     // Lấy tổ hợp biến thể theo ID biến thể
-    public function getVariantCombinationsWithDetails($variantId) {
+    public function getVariantCombinationsWithDetails($variantId)
+    {
         $sql = "SELECT 
                 vt.id as typeId,
                 vt.name as typeName,
@@ -53,7 +54,7 @@ class VariantCombination extends BaseModel
             JOIN variant_types vt ON vv.variantTypeId = vt.id
             WHERE vc.productVariantId = :variantId
             ORDER BY vt.id";
-            
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['variantId' => $variantId]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
