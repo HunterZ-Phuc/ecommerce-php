@@ -27,6 +27,7 @@ $router->add('/order/checkout', ['controller' => 'Order', 'action' => 'checkout'
 $router->add('/order/create', ['controller' => 'Order', 'action' => 'create']);
 $router->add('/order/success/{id:\d+}', ['controller' => 'Order', 'action' => 'success']);
 $router->add('/order/cancel/{id:\d+}', ['controller' => 'Order', 'action' => 'cancel']);
+$router->add('/order/return/{id:\d+}', ['controller' => 'Order', 'action' => 'returnRequest']);
 $router->add('/order/detail/{id:\d+}', ['controller' => 'Order', 'action' => 'detail']);
 $router->add('/order/history[/]?[?page=\d+]?', ['controller' => 'Order', 'action' => 'history']);
 $router->add('/order/payment/{id:\d+}', ['controller' => 'Order', 'action' => 'payment']);

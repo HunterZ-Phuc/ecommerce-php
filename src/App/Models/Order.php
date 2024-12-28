@@ -43,8 +43,8 @@ class Order extends BaseModel
     public function createPayment($data)
     {
         try {
-            $sql = "INSERT INTO payments (orderId, amount, paymentMethod, paymentStatus) 
-                    VALUES (:orderId, :amount, :paymentMethod, :paymentStatus)";
+            $sql = "INSERT INTO payments (orderId, amount, paymentMethod) 
+                    VALUES (:orderId, :amount, :paymentMethod)";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute($data);
@@ -61,13 +61,14 @@ class Order extends BaseModel
             'PROCESSING' => ['CONFIRMED', 'CANCELLED'],
             'CONFIRMED' => ['SHIPPING', 'CANCELLED'],
             'SHIPPING' => ['DELIVERED', 'RETURN_REQUEST'],
-            'DELIVERED' => [],
             'RETURN_REQUEST' => ['RETURN_APPROVED', 'DELIVERED'],
             'RETURN_APPROVED' => ['RETURNED'],
             'RETURNED' => [],
+            'DELIVERED' => [],
             'CANCELLED' => []
         ];
 
+        // Kiểm tra xem trạng thái mới có thể được cập nhật không
         return in_array($newStatus, $validTransitions[$currentStatus] ?? []);
     }
 
@@ -101,8 +102,7 @@ class Order extends BaseModel
             $sql = "SELECT o.*, 
                     a.fullName, a.phoneNumber as phone, a.address,
                     u.fullName as userName, u.email as userEmail,
-                    p.paymentMethod as paymentMethod, 
-                    p.paymentStatus as paymentStatus,
+                    p.paymentMethod as paymentMethod,
                     p.qrImage as bankingImage
                     FROM orders o
                     LEFT JOIN addresses a ON o.addressId = a.id
@@ -174,8 +174,7 @@ class Order extends BaseModel
     {
         try {
             $sql = "SELECT o.*, 
-                    p.method as paymentMethod,
-                    p.status as paymentStatus
+                    p.method as paymentMethod
                     FROM orders o
                     LEFT JOIN payments p ON o.id = p.orderId
                     WHERE o.userId = :userId
@@ -226,26 +225,81 @@ class Order extends BaseModel
     }
 
     // Cập nhật trạng thái thanh toán
-    public function updatePaymentStatus($orderId, $status, $note = '')
+    public function updatePaymentStatus($orderId, $status, $userId)
     {
         try {
-            // Cập nhật trạng thái thanh toán trong bảng payments
-            $sql = "UPDATE payments 
+            $this->db->beginTransaction();
+
+            // Cập nhật payment status và order status
+            $sql = "UPDATE orders 
                     SET paymentStatus = :status,
-                        note = :note,
-                        updatedAt = CURRENT_TIMESTAMP
-                    WHERE orderId = :orderId";
+                        orderStatus = CASE 
+                            WHEN :status = 'CONFIRMED' THEN 'CONFIRMED'
+                            ELSE orderStatus 
+                        END
+                    WHERE id = :orderId";
 
             $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
+            $stmt->execute([
                 'status' => $status,
-                'note' => $note,
                 'orderId' => $orderId
             ]);
+
+            // 2. Thêm vào lịch sử đơn hàng
+            $this->createOrderHistory([
+                'orderId' => $orderId,
+                'status' => $status === 'CONFIRMED' ? 'CONFIRMED' : 'CANCELLED',
+                'note' => $status === 'CONFIRMED' ? 'Đã xác nhận thanh toán' : 'Thanh toán thất bại',
+                'createdBy' => $userId
+            
+            ]);
+
+            $this->db->commit();
+            return true;
+
         } catch (PDOException $e) {
+            $this->db->rollBack();
             throw new Exception("Lỗi khi cập nhật trạng thái thanh toán: " . $e->getMessage());
         }
     }
+
+    // Cập nhật trạng thái thanh toán by user
+    public function updatePaymentStatusByUser($orderId, $status, $userId)
+    {
+        try {
+            $this->db->beginTransaction();
+
+            // 1. Cập nhật trạng thái thanh toán trong bảng orders
+            $sql = "UPDATE orders 
+                    SET paymentStatus = :status,
+                        note = 'Chờ xác nhận thanh toán',
+                        updatedAt = CURRENT_TIMESTAMP
+                    WHERE id = :orderId";
+                
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                'status' => $status,
+                'orderId' => $orderId
+            ]);
+
+            // 2. Thêm vào lịch sử đơn hàng
+            $this->createOrderHistory([
+                'orderId' => $orderId,
+                'status' => $status,
+                'note' => $status === 'PROCESSING' ? 'Đang xác nhận thanh toán' : 'Thanh toán thất bại',
+                'createdBy' => $userId
+            
+            ]);
+
+            $this->db->commit();
+            return true;
+
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            throw new Exception("Lỗi khi cập nhật trạng thái thanh toán: " . $e->getMessage());
+        }
+    }
+
 
     // Cập nhật QR image
     public function updateQRImage($orderId, $qrImage)
@@ -269,7 +323,7 @@ class Order extends BaseModel
     {
         try {
             $sql = "SELECT o.*, 
-                    p.paymentMethod, p.paymentStatus,
+                    p.paymentMethod,
                     (SELECT COUNT(*) FROM order_items WHERE orderId = o.id) as totalItems
                     FROM orders o
                     LEFT JOIN payments p ON o.id = p.orderId
@@ -312,7 +366,6 @@ class Order extends BaseModel
                     a.phoneNumber as receiverPhone,
                     a.address,
                     p.paymentMethod,
-                    p.paymentStatus,
                     p.amount as paidAmount,
                     GROUP_CONCAT(DISTINCT oi.id) as orderItemIds,
                     GROUP_CONCAT(DISTINCT oh.status) as statusHistory,
@@ -394,7 +447,6 @@ class Order extends BaseModel
                     a.phoneNumber as receiverPhone,
                     a.address,
                     p.paymentMethod,
-                    p.paymentStatus,
                     p.amount as paidAmount
                     FROM orders o
                     LEFT JOIN users u ON o.userId = u.id
@@ -429,7 +481,6 @@ class Order extends BaseModel
                     a.phoneNumber as receiverPhone,
                     a.address,
                     p.paymentMethod,
-                    p.paymentStatus,
                     p.amount as paidAmount,
                     GROUP_CONCAT(DISTINCT oi.id) as orderItemIds,
                     GROUP_CONCAT(DISTINCT oh.status) as statusHistory,
@@ -498,29 +549,56 @@ class Order extends BaseModel
     }
 
     // Yêu cầu trả hàng
-    public function requestReturn($orderId, $reason)
+    public function createReturnRequest($orderId, $status, $reason, $userId)
     {
         try {
-            $this->db->beginTransaction();
-
             // Cập nhật trạng thái đơn hàng
-            $sql = "UPDATE orders SET 
-                    orderStatus = 'RETURN_REQUEST',
-                    returnReason = :reason,
-                    returnRequestDate = CURRENT_TIMESTAMP
-                    WHERE id = :orderId";
-
+            $sql = "UPDATE orders SET orderStatus = :status WHERE id = :orderId";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([
+            $stmt->execute(['status' => $status, 'orderId' => $orderId]);
+
+            // Thêm vào lịch sử
+            $this->createOrderHistory([
                 'orderId' => $orderId,
-                'reason' => $reason
+                'status' => $status,
+                'note' => $reason,
+                'createdBy' => $userId
             ]);
 
-            $this->db->commit();
-            return true;
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            throw $e;
+        } catch (PDOException $e) {
+            error_log("Error in createReturnRequest: " . $e->getMessage());
+            throw new Exception("Lỗi khi tạo yêu cầu hoàn trả: " . $e->getMessage());
+        }
+    }
+
+    // Xử lý hoàn trả
+    public function processReturn($orderId)
+    {
+        try {
+            // 1. Lấy thông tin các sản phẩm trong đơn hàng
+            $sql = "SELECT variantId, quantity FROM order_items WHERE orderId = :orderId";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(['orderId' => $orderId]);
+            $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // 2. Cập nhật số lượng tồn kho
+            foreach ($items as $item) {
+                $sql = "UPDATE product_variants 
+                       SET quantity = quantity + :returnQuantity 
+                       WHERE id = :variantId";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([
+                    'returnQuantity' => $item['quantity'],
+                    'variantId' => $item['variantId']
+                ]);
+            }
+
+            // 3. Cập nhật trạng thái đơn hàng
+            $sql = "UPDATE orders SET orderStatus = 'RETURNED' WHERE id = :orderId";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute(['orderId' => $orderId]);
+        } catch (PDOException $e) {
+            throw new Exception("Lỗi khi xử lý hoàn trả: " . $e->getMessage());
         }
     }
 
@@ -610,6 +688,7 @@ class Order extends BaseModel
             'DELIVERED' => 'Đã giao hàng',
             'CANCELLED' => 'Đã hủy',
             'RETURN_REQUEST' => 'Yêu cầu trả hàng',
+            'RETURN_APPROVED' => 'Đã duyệt trả hàng',
             'RETURNED' => 'Đã trả hàng'
         ];
 

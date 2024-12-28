@@ -203,7 +203,14 @@ CREATE TABLE orders (
   `addressId` int(11) NOT NULL,
   `totalAmount` decimal(10,2) NOT NULL,
   `paymentMethod` enum('CASH_ON_DELIVERY', 'QR_TRANSFER') NOT NULL,
-  `paymentStatus` enum('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
+  `paymentStatus` enum(
+    'PENDING',               -- Chờ thanh toán
+    'PROCESSING',            -- Đang xử lý
+    'CONFIRMED',             -- Đã xác nhận
+    'PAID',                  -- Đã thanh toán
+    'FAILED',                -- Thanh toán thất bại
+    'REFUNDED'               -- Đã hoàn tiền
+  ) NOT NULL DEFAULT 'PENDING',
   `orderStatus` enum(
     'PENDING',                -- Chờ xử lý
     'PROCESSING',             -- Đang xử lý
@@ -253,7 +260,7 @@ CREATE TABLE order_items (
 CREATE TABLE order_history (
     id INT PRIMARY KEY AUTO_INCREMENT,
     orderId INT NOT NULL,
-    status ENUM('PENDING', 'PROCESSING', 'SHIPPING', 'DELIVERED', 'CANCELLED') NOT NULL,
+    status ENUM('PENDING', 'PROCESSING', 'CONFIRMED', 'SHIPPING', 'RETURN_REQUEST', 'RETURN_APPROVED', 'RETURNED', 'DELIVERED', 'CANCELLED') NOT NULL,
     note TEXT,
     createdBy INT NOT NULL,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -267,7 +274,6 @@ CREATE TABLE payments (
   `amount` decimal(15,2) NOT NULL,
   `paymentMethod` enum('CASH_ON_DELIVERY', 'QR_TRANSFER') NOT NULL,
   `qrImage` varchar(255) DEFAULT NULL,
-  `paymentStatus` enum('PENDING', 'PAID', 'FAILED') NOT NULL DEFAULT 'PENDING',
   `note` TEXT,
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `updatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),

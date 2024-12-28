@@ -1,11 +1,17 @@
-<!-- Sửa 3 -->
+<?php
+use App\Helpers\OrderHelper;
+?>
 <div class="container my-5">
     <div class="row">
         <div class="col-md-8">
             <div class="card mb-4">
+                <?php
+                    $orderStatusClass = OrderHelper::getOrderStatusClass($order['orderStatus']);
+                    $statusText = OrderHelper::getOrderStatusText($order['orderStatus']);   
+                ?>
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Chi tiết đơn hàng #<?= $order['id'] ?></h5>
-                    <span class="badge bg-<?= $order['statusColor'] ?>"><?= $order['statusText'] ?></span>
+                    <span class="badge <?= $orderStatusClass ?>"><?= $statusText ?></span>
                 </div>
                 <div class="card-body">
                     <!-- Thông tin giao hàng -->
@@ -54,10 +60,14 @@
                             <?= $order['paymentMethod'] === 'COD' ? 'Thanh toán khi nhận hàng' :
                                 ($order['paymentMethod'] === 'BANKING' ? 'Chuyển khoản ngân hàng' : $order['paymentMethod']) ?>
                         </p>
+                        <?php
+                        $paymentStatusClass = OrderHelper::getPaymentStatusClass($order['paymentStatus']);
+                        $paymentText = OrderHelper::getPaymentStatusText($order['paymentStatus']);
+                        ?>
                         <p class="mb-1">
                             <strong>Trạng thái:</strong>
-                            <span class="badge bg-<?= $order['paymentStatusColor'] ?>">
-                                <?= $order['paymentStatusText'] ?>
+                            <span class="badge <?= $paymentStatusClass ?>">
+                                <?= $paymentText ?>
                             </span>
                         </p>
                         <?php if ($order['paymentMethod'] === 'BANKING' && $order['paymentStatus'] === 'PENDING'): ?>
@@ -118,7 +128,7 @@
                             <div class="timeline-item">
                                 <div class="timeline-marker"></div>
                                 <div class="timeline-content">
-                                    <h6 class="mb-0"><?= $history['statusText'] ?? $history['status'] ?></h6>
+                                    <h6 class="mb-0"><?= OrderHelper::getOrderStatusText($history['status']) ?? $history['status'] ?></h6>
                                     <small class="text-muted">
                                         <?= date('d/m/Y H:i', strtotime($history['createdAt'])) ?>
                                     </small>
@@ -179,8 +189,8 @@
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
-                        <label>Lý do hoàn trả</label>
-                        <textarea name="reason" class="form-control" required></textarea>
+                        <label for="returnReason" class="form-label">Lý do hoàn trả</label>
+                        <textarea name="returnReason" id="returnReason" class="form-control" required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">

@@ -8,6 +8,7 @@ use App\Models\Address;
 use App\Models\ProductVariant;
 use Core\Database;
 use Exception;
+use App\Helpers\OrderHelper;
 
 class OrderController extends BaseController
 {
@@ -107,12 +108,7 @@ class OrderController extends BaseController
 
     public function create()
     {
-        // vãi cút đây là điêm point
         try {
-            error_log('=== START CREATE ORDER ===');
-            error_log('POST Data: ' . print_r($_POST, true));
-            error_log('Session Data: ' . print_r($_SESSION, true));
-
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception('Invalid request method');
             }
@@ -127,8 +123,6 @@ class OrderController extends BaseController
             $paymentMethod = filter_input(INPUT_POST, 'paymentMethod', FILTER_SANITIZE_STRING);
             $cartItems = $_SESSION['selected_items'] ?? [];
             $selectedVariantIds = $_SESSION['selected_variant_ids'] ?? [];
-
-
 
             // Validate dữ liệu
             if (!$addressId) {
@@ -182,8 +176,7 @@ class OrderController extends BaseController
                 $paymentData = [
                     'orderId' => $orderId,
                     'amount' => $totalAmount,
-                    'paymentMethod' => $paymentMethod,
-                    'paymentStatus' => 'PENDING'
+                    'paymentMethod' => $paymentMethod
                 ];
 
                 if (!$this->orderModel->createPayment($paymentData)) {
@@ -312,9 +305,10 @@ class OrderController extends BaseController
                 throw new Exception('Không tìm thấy đơn hàng');
             }
 
-            // Cập nhật trạng thái thanh toán
+        
+            // Cập nhật trạng thái thanh toán sang chờ xác nhận
+            $this->orderModel->updatePaymentStatusByUser($id, 'PROCESSING', $userId);
 
-            $this->orderModel->updateOrderStatus($id, 'PENDING', 'Chờ xác nhận thanh toán', $userId);
             $_SESSION['success'] = 'Xác nhận thanh toán thành công. Chúng tôi sẽ kiểm tra và cập nhật trạng thái đơn hàng của bạn.';
             $this->redirect("order/detail/{$id}");
 
@@ -394,10 +388,10 @@ class OrderController extends BaseController
 
             // Thêm thông tin trạng thái và màu sắc cho mỗi đơn hàng
             foreach ($orders as &$order) {
-                $order['statusText'] = $this->getOrderStatusText($order['orderStatus']);
-                $order['statusColor'] = $this->getOrderStatusColor($order['orderStatus']);
-                $order['paymentStatusText'] = $this->getPaymentStatusText($order['paymentStatus']);
-                $order['paymentStatusColor'] = $this->getPaymentStatusColor($order['paymentStatus']);
+                $order['statusText'] = OrderHelper::getOrderStatusText($order['orderStatus']);
+                $order['statusColor'] = OrderHelper::getOrderStatusClass($order['orderStatus']);
+                $order['paymentStatusText'] = OrderHelper::getPaymentStatusText($order['paymentStatus']);
+                $order['paymentStatusColor'] = OrderHelper::getPaymentStatusClass($order['paymentStatus']);
             }
 
             $this->view('order/history', [
@@ -433,10 +427,10 @@ class OrderController extends BaseController
             }
 
             // Thêm các trạng thái và màu sắc
-            $order['statusText'] = $this->getOrderStatusText($order['orderStatus']);
-            $order['statusColor'] = $this->getOrderStatusColor($order['orderStatus']);
-            $order['paymentStatusText'] = $this->getPaymentStatusText($order['paymentStatus']);
-            $order['paymentStatusColor'] = $this->getPaymentStatusColor($order['paymentStatus']);
+            $order['statusText'] = OrderHelper::getOrderStatusText($order['orderStatus']);
+            $order['statusColor'] = OrderHelper::getOrderStatusClass($order['orderStatus']);
+            $order['paymentStatusText'] = OrderHelper::getPaymentStatusText($order['paymentStatus']);
+            $order['paymentStatusColor'] = OrderHelper::getPaymentStatusClass($order['paymentStatus']);
 
             $this->view('order/detail', [
                 'title' => 'Chi tiết đơn hàng #' . $id,
@@ -447,50 +441,6 @@ class OrderController extends BaseController
             $_SESSION['error'] = $e->getMessage();
             $this->redirect('order/history');
         }
-    }
-
-    private function getOrderStatusText($status)
-    {
-        $statusMap = [
-            'PENDING' => 'Chờ xác nhận',
-            'PROCESSING' => 'Đang xử lý',
-            'SHIPPING' => 'Đang giao hàng',
-            'DELIVERED' => 'Đã giao hàng',
-            'CANCELLED' => 'Đã hủy'
-        ];
-        return $statusMap[$status] ?? $status;
-    }
-
-    private function getOrderStatusColor($status)
-    {
-        $colorMap = [
-            'PENDING' => 'warning',
-            'PROCESSING' => 'info',
-            'SHIPPING' => 'primary',
-            'DELIVERED' => 'success',
-            'CANCELLED' => 'danger'
-        ];
-        return $colorMap[$status] ?? 'secondary';
-    }
-
-    private function getPaymentStatusText($status)
-    {
-        $statusMap = [
-            'PENDING' => 'Chờ thanh toán',
-            'PAID' => 'Đã thanh toán',
-            'CANCELLED' => 'Đã hủy'
-        ];
-        return $statusMap[$status] ?? $status;
-    }
-
-    private function getPaymentStatusColor($status)
-    {
-        $colorMap = [
-            'PENDING' => 'warning',
-            'PAID' => 'success',
-            'CANCELLED' => 'danger'
-        ];
-        return $colorMap[$status] ?? 'secondary';
     }
 
     public function cancel($id)
@@ -562,6 +512,48 @@ class OrderController extends BaseController
 
         } catch (Exception $e) {
             $this->db->rollBack();
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect("order/detail/{$id}");
+        }
+    }
+
+    // Cập nhật yêu cầu hoàn trả
+
+    public function returnRequest($id)
+    {
+        try {
+            $userId = $this->auth->getUserId();
+            if (!$userId) {
+                $this->redirect('login');
+                return;
+            }
+
+            $order = $this->orderModel->getOrderDetails($id);
+            $status = 'RETURN_REQUEST';
+            $note = $_POST['returnReason'] ?? 'Yêu cầu hoàn trả đơn hàng bởi khách hàng';
+
+            if (!$order || $order['userId'] != $userId) {
+                throw new Exception('Không tìm thấy đơn hàng hoặc không có quyền hoàn trả');
+            }
+
+            if ($order['orderStatus'] !== 'SHIPPING') {
+                throw new Exception('Không thể hoàn trả đơn hàng ở trạng thái này');
+            }
+
+            $this->orderModel->updateOrderStatus(
+                $id,
+                $status,
+                $note,
+                $userId
+            );
+
+            // Cập nhật trạng thái đơn hàng
+            $this->orderModel->update($id, ['orderStatus' => $status]);
+
+            $_SESSION['success'] = 'Xác nhận yêu cầu hoàn trả đơn hàng';
+            $this->redirect("order/detail/{$id}");
+
+        } catch (Exception $e) {
             $_SESSION['error'] = $e->getMessage();
             $this->redirect("order/detail/{$id}");
         }

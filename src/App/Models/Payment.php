@@ -17,17 +17,6 @@ class Payment extends BaseModel
     public function create($data)
     {
         $data['createdAt'] = date('Y-m-d H:i:s');
-        $data['paymentStatus'] = $data['paymentStatus'] ?? 'PENDING';
         return parent::create($data);
-    }
-
-    public function updateStatus($id, $status)
-    {
-        $data = [
-            'paymentStatus' => $status,
-            'paymentDate' => date('Y-m-d H:i:s'),
-            'updatedAt' => date('Y-m-d H:i:s')
-        ];
-        return parent::update($id, $data);
     }
 }

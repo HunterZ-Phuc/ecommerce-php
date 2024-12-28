@@ -1,3 +1,7 @@
+<?php
+use App\Helpers\OrderHelper;
+?>
+
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-10">
@@ -74,32 +78,8 @@
                                             </td>
                                             <td>
                                                 <?php
-                                                $orderStatusClass = '';
-                                                switch ($order['orderStatus']) {
-                                                    case 'PENDING':
-                                                        $orderStatusClass = 'bg-warning';
-                                                        $statusText = 'Chờ xử lý';
-                                                        break;
-                                                    case 'PROCESSING':
-                                                        $orderStatusClass = 'bg-info';
-                                                        $statusText = 'Đang xử lý';
-                                                        break;
-                                                    case 'SHIPPING':
-                                                        $orderStatusClass = 'bg-primary';
-                                                        $statusText = 'Đang giao';
-                                                        break;
-                                                    case 'DELIVERED':
-                                                        $orderStatusClass = 'bg-success';
-                                                        $statusText = 'Đã giao';
-                                                        break;
-                                                    case 'CANCELLED':
-                                                        $orderStatusClass = 'bg-danger';
-                                                        $statusText = 'Đã hủy';
-                                                        break;
-                                                    default:
-                                                        $orderStatusClass = 'bg-secondary';
-                                                        $statusText = 'Không xác định';
-                                                }
+                                                $orderStatusClass = OrderHelper::getOrderStatusClass($order['orderStatus']);
+                                                $statusText = OrderHelper::getOrderStatusText($order['orderStatus']);   
                                                 ?>
                                                 <span class="badge <?= $orderStatusClass ?>">
                                                     <?= $statusText ?>
@@ -107,24 +87,8 @@
                                             </td>
                                             <td>
                                                 <?php
-                                                $paymentStatusClass = '';
-                                                switch ($order['paymentStatus']) {
-                                                    case 'PENDING':
-                                                        $paymentStatusClass = 'bg-warning';
-                                                        $paymentText = 'Chờ thanh toán';
-                                                        break;
-                                                    case 'PAID':
-                                                        $paymentStatusClass = 'bg-success';
-                                                        $paymentText = 'Đã thanh toán';
-                                                        break;
-                                                    case 'REFUNDED':
-                                                        $paymentStatusClass = 'bg-info';
-                                                        $paymentText = 'Đã hoàn tiền';
-                                                        break;
-                                                    default:
-                                                        $paymentStatusClass = 'bg-secondary';
-                                                        $paymentText = 'Không xác định';
-                                                }
+                                                $paymentStatusClass = OrderHelper::getPaymentStatusClass($order['paymentStatus']);
+                                                $paymentText = OrderHelper::getPaymentStatusText($order['paymentStatus']);
                                                 ?>
                                                 <span class="badge <?= $paymentStatusClass ?>">
                                                     <?= $paymentText ?>

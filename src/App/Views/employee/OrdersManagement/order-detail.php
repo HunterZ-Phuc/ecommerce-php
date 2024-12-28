@@ -183,7 +183,7 @@ use App\Helpers\OrderHelper;
             </div>
 
             <!-- Cập nhật trạng thái thanh toán -->
-            <?php if ($order['paymentMethod'] === 'QR_TRANSFER' && $order['paymentStatus'] === 'PENDING'): ?>
+            <?php if ($order['paymentMethod'] === 'QR_TRANSFER' && ($order['paymentStatus'] === 'PENDING' || $order['paymentStatus'] === 'PROCESSING')): ?>
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="card-title mb-0">Xác nhận thanh toán</h5>
@@ -212,31 +212,24 @@ use App\Helpers\OrderHelper;
                 </div>
                 <div class="card-body">
                     <div class="timeline">
-                        <?php foreach ($order['statusHistory'] as $history): ?>
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between">
-                                    <span class="badge <?= OrderHelper::getOrderStatusClass($history['status']) ?>">
-                                        <?= OrderHelper::getOrderStatusText($history['status']) ?>
-                                    </span>
-                                    <small><?= date('d/m/Y H:i', strtotime($history['date'])) ?></small>
+                        <?php foreach ($order['history'] as $history): ?>
+                            <div class="timeline-item">
+                                <!-- Dùng OrderHelper để chuyển chữ của $history['statusText'] sang dạng tiếng việt-->
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-0"><?= OrderHelper::getOrderStatusText($history['status']) ?? $history['status'] ?></h6>
+                                    <small class="text-muted">
+                                        <?= date('d/m/Y H:i', strtotime($history['createdAt'])) ?>
+                                    </small>
+                                    <?php if (!empty($history['note'])): ?>
+                                        <p class="mb-0 mt-2"><?= htmlspecialchars($history['note']) ?></p>
+                                    <?php endif; ?>
                                 </div>
-                                <?php if (!empty($history['note'])): ?>
-                                    <div class="text-muted mt-1"><?= $history['note'] ?></div>
-                                <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
                     </div>
                 </div>
             </div>
-
-            <!-- Hiển thị thông tin hoàn trả nếu có -->
-            <?php if ($order['orderStatus'] === 'RETURN_REQUEST'): ?>
-                <div class="alert alert-info">
-                    <h6>Thông tin yêu cầu hoàn trả:</h6>
-                    <p><strong>Lý do:</strong> <?= $order['returnReason'] ?></p>
-                    <p><strong>Ngày yêu cầu:</strong> <?= date('d/m/Y H:i', strtotime($order['returnRequestDate'])) ?></p>
-                </div>
-            <?php endif; ?>
         </div>
     </div>
 </div>

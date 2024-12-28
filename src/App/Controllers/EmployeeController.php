@@ -228,6 +228,8 @@ class EmployeeController extends BaseController
     public function updateOrderStatus()
     {
         try {
+            $this->db->beginTransaction();
+
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception('Invalid request method');
             }
@@ -241,6 +243,8 @@ class EmployeeController extends BaseController
             }
 
             $userId = $this->auth->getUserId();
+
+            // Cập nhật trạng thái đơn hàng
             $this->orderModel->updateOrderStatus($orderId, $status, $note, $userId);
 
             // Nếu đơn hàng đã giao thành công và thanh toán COD
@@ -248,7 +252,16 @@ class EmployeeController extends BaseController
             if ($status === 'DELIVERED' && $order['paymentMethod'] === 'CASH_ON_DELIVERY') {
                 $this->orderModel->updatePaymentStatus($orderId, 'PAID');
             }
+            if ($status === 'RETURN_APPROVED') {
+                $this->orderModel->updateOrderStatus($orderId, $status, 'Đã chấp nhận yêu cầu hoàn trả', $userId);
+            }
 
+            if ($status === 'RETURNED') {
+                $this->orderModel->processReturn($orderId);
+                $this->orderModel->updateOrderStatus($orderId, 'RETURNED', 'Đã hoàn trả thành công', $userId);
+            }
+
+            $this->db->commit();
             $_SESSION['success'] = 'Cập nhật trạng thái đơn hàng thành công';
             // Lấy lại thông tin đơn hàng mới nhất
             $updatedOrder = $this->orderModel->getOrderById($orderId);
@@ -261,6 +274,7 @@ class EmployeeController extends BaseController
 
         } catch (Exception $e) {
             $_SESSION['error'] = $e->getMessage();
+            $this->db->rollBack();
             $order = $this->orderModel->getOrderById($orderId);
             return $this->view('employee/OrdersManagement/order-detail', [
                 'title' => 'Chi tiết đơn hàng #' . $orderId,
@@ -273,36 +287,16 @@ class EmployeeController extends BaseController
     public function confirmPayment()
     {
         try {
-            $this->db->beginTransaction();
+            $orderId = $_POST['orderId'];
+            $status = $_POST['status'] === 'PAID' ? 'CONFIRMED' : 'FAILED';
+            $userId = $this->auth->getUserId();
+            // Cập nhật trạng thái thanh toán
+            $this->orderModel->updatePaymentStatus($orderId, $status, $userId);
 
-            $orderId = $_POST['orderId'] ?? null;
-            $status = $_POST['status'] ?? null;
-            // Thêm note tương ứng với trạng thái
-            $note = $status === 'PAID' ?
-                'Xác nhận đã nhận được thanh toán' :
-                'Thanh toán thất bại';
-
-            // Gọi updatePaymentStatus với note
-            $this->orderModel->updatePaymentStatus($orderId, $status, $note);
-
-            // Nếu thanh toán thành công, cập nhật trạng thái đơn hàng sang CONFIRMED
-            if ($status === 'PAID') {
-                $userId = $this->auth->getUserId();
-                $this->orderModel->updateOrderStatus($orderId, 'CONFIRMED', 'Thanh toán thành công', $userId);
-            }
-
-            // Nếu thanh toán không thành công, cập nhật trạng thái đơn hàng sang CANCELLED 
-            if ($status === 'FAILED') {
-                $userId = $this->auth->getUserId();
-                $this->orderModel->updateOrderStatus($orderId, 'CANCELLED', 'Thanh toán thất bại', $userId);
-            }
-
-            $this->db->commit();
-            $_SESSION['success'] = 'Cập nhật trạng thái thanh toán thành công';
+            $_SESSION['success'] = 'Đã cập nhật trạng thái thanh toán';
             $this->redirect("employee/order/{$orderId}");
 
         } catch (Exception $e) {
-            $this->db->rollBack();
             $_SESSION['error'] = $e->getMessage();
             $this->redirect("employee/order/{$orderId}");
         }
@@ -347,7 +341,7 @@ class EmployeeController extends BaseController
 
             // Ghi dữ liệu từng dòng
             foreach ($orders as $order) {
-                $status = $this->getOrderStatusText($order['orderStatus']);
+                $status = OrderHelper::getOrderStatusText($order['orderStatus']);
                 $paymentMethod = $order['paymentMethod'] === 'CASH_ON_DELIVERY' ? 'Tiền mặt' : 'Chuyển khoản';
 
                 fputcsv($output, [
@@ -369,19 +363,6 @@ class EmployeeController extends BaseController
             $_SESSION['error'] = $e->getMessage();
             $this->redirect('employee/orders');
         }
-    }
-
-    // Helper function để chuyển đổi trạng thái
-    private function getOrderStatusText($status)
-    {
-        $statusMap = [
-            'PENDING' => 'Chờ xác nhận',
-            'PROCESSING' => 'Đang xử lý',
-            'SHIPPING' => 'Đang giao',
-            'DELIVERED' => 'Đã giao',
-            'CANCELLED' => 'Đã hủy'
-        ];
-        return $statusMap[$status] ?? $status;
     }
 
     // View đổi mật khẩu
