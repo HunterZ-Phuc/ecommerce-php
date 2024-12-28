@@ -2,7 +2,7 @@
 $mauSac = array("Đỏ", "Xanh", "Tím", "Vàng", "Chín", "Khô", "Khác");
 $phoiKho = array("Phơi khô", "Xào tay");
 $trongLuong = array("1g", "2g", "5g", "10g", "100g", "250g", "500g", "1Kg", "2kg", "5Kg", "10Kg", "Khác");
-$combo = array("lẻ", "combo");
+$combo = array("Lẻ", "Combo");
 ?>
 
 <div id="variantSection">
