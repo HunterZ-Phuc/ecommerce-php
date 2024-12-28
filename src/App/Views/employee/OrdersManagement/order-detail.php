@@ -16,15 +16,25 @@ use App\Helpers\OrderHelper;
         </div>
     </div>
 
-    <?php if (isset($_SESSION['error'])): ?>
-        <div class="alert alert-danger"><?= $_SESSION['error'] ?></div>
-        <?php unset($_SESSION['error']); ?>
+    <?php if (isset($_SESSION['success'])): ?>
+        <div class="alert alert-success">
+            <?= $_SESSION['success'] ?>
+            <?php unset($_SESSION['success']); ?>
+        </div>
     <?php endif; ?>
 
-    <?php if (isset($_SESSION['success'])): ?>
-        <div class="alert alert-success"><?= $_SESSION['success'] ?></div>
-        <?php unset($_SESSION['success']); ?>
+    <?php if (isset($_SESSION['error'])): ?>
+        <div class="alert alert-danger">
+            <?= $_SESSION['error'] ?>
+            <?php unset($_SESSION['error']); ?>
+        </div>
     <?php endif; ?>
+
+    <script>
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+    </script>
 
     <div class="row">
         <!-- Thông tin đơn hàng -->
@@ -205,6 +215,27 @@ use App\Helpers\OrderHelper;
                 </div>
             <?php endif; ?>
 
+            <?php if ($order['paymentMethod'] === 'QR_TRANSFER' && ($order['orderStatus'] === 'RETURNED' && $order['paymentStatus'] === 'CONFIRMED')): ?>
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Xác nhận thanh toán</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="/ecommerce-php/employee/order/confirm-payment" method="POST">
+                            <input type="hidden" name="orderId" value="<?= $order['id'] ?>">
+                            <div class="mb-3">
+                                <label class="form-label">Trạng thái thanh toán</label>
+                                <select name="status" class="form-select" required>
+                                    <option value="">Chọn trạng thái</option>
+                                    <option value="RETURNED">Đã hoàn tiền</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success">Xác nhận</button>
+                        </form>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <!-- Lịch sử đơn hàng -->
             <div class="card">
                 <div class="card-header">
@@ -212,18 +243,23 @@ use App\Helpers\OrderHelper;
                 </div>
                 <div class="card-body">
                     <div class="timeline">
-                        <?php foreach ($order['history'] as $history): ?>
-                            <div class="timeline-item">
-                                <!-- Dùng OrderHelper để chuyển chữ của $history['statusText'] sang dạng tiếng việt-->
-                                <div class="timeline-marker"></div>
-                                <div class="timeline-content">
-                                    <h6 class="mb-0"><?= OrderHelper::getOrderStatusText($history['status']) ?? $history['status'] ?></h6>
-                                    <small class="text-muted">
-                                        <?= date('d/m/Y H:i', strtotime($history['createdAt'])) ?>
+                        <?php foreach ($order['statusHistory'] as $history): ?>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge <?= OrderHelper::getOrderStatusClass($history['status']) ?>">
+                                            <?= OrderHelper::getOrderStatusText($history['status']) ?>
+                                        </span>
+                                        <?php if (!empty($history['note'])): ?>
+                                            <div class="text-muted mt-1"><?= $history['note'] ?></div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <small class="ms-3">
+                                        <?php 
+                                            $dateParts = explode(' ', $history['date']);
+                                            echo date('d/m/Y', strtotime($dateParts[0])) . ' ' . $dateParts[1] . ':00';
+                                        ?>
                                     </small>
-                                    <?php if (!empty($history['note'])): ?>
-                                        <p class="mb-0 mt-2"><?= htmlspecialchars($history['note']) ?></p>
-                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>

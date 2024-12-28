@@ -474,6 +474,7 @@ class Order extends BaseModel
     public function getOrderById($id)
     {
         try {
+            // Lấy thông tin cơ bản của đơn hàng
             $sql = "SELECT o.*,
                     u.fullName as customerName,
                     u.phone,
@@ -483,9 +484,6 @@ class Order extends BaseModel
                     p.paymentMethod,
                     p.amount as paidAmount,
                     GROUP_CONCAT(DISTINCT oi.id) as orderItemIds,
-                    GROUP_CONCAT(DISTINCT oh.status) as statusHistory,
-                    GROUP_CONCAT(DISTINCT oh.note) as statusNotes,
-                    GROUP_CONCAT(DISTINCT oh.createdAt) as statusDates,
                     GROUP_CONCAT(DISTINCT 
                         CONCAT(pv.id, ':', oi.quantity, ':', oi.price, ':', prod.productName, ':', IFNULL(pv.sku, 'N/A'))
                         ORDER BY oi.id
@@ -497,7 +495,6 @@ class Order extends BaseModel
                     LEFT JOIN order_items oi ON o.id = oi.orderId
                     LEFT JOIN product_variants pv ON oi.variantId = pv.id
                     LEFT JOIN products prod ON pv.productId = prod.id
-                    LEFT JOIN order_history oh ON o.id = oh.orderId
                     WHERE o.id = ?
                     GROUP BY o.id";
 
@@ -524,22 +521,17 @@ class Order extends BaseModel
                 }
                 $order['items'] = $itemsArray;
 
-                // Xử lý lịch sử trạng thái
-                $statusHistory = [];
-                if (!empty($order['statusHistory'])) {
-                    $statuses = explode(',', $order['statusHistory']);
-                    $notes = explode(',', $order['statusNotes']);
-                    $dates = explode(',', $order['statusDates']);
-
-                    for ($i = 0; $i < count($statuses); $i++) {
-                        $statusHistory[] = [
-                            'status' => $statuses[$i],
-                            'note' => $notes[$i] ?? '',
-                            'date' => $dates[$i] ?? ''
-                        ];
-                    }
-                }
-                $order['statusHistory'] = $statusHistory;
+                // Lấy lịch sử đơn hàng riêng
+                $historySql = "SELECT 
+                                status,
+                                note,
+                                DATE_FORMAT(createdAt, '%Y-%m-%d %H:%i:%s') as date
+                              FROM order_history 
+                              WHERE orderId = ?
+                              ORDER BY createdAt DESC";
+                $stmt = $this->db->prepare($historySql);
+                $stmt->execute([$id]);
+                $order['statusHistory'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
 
             return $order;

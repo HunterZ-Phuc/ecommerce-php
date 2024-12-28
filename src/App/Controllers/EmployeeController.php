@@ -244,42 +244,37 @@ class EmployeeController extends BaseController
 
             $userId = $this->auth->getUserId();
 
-            // Cập nhật trạng thái đơn hàng
-            $this->orderModel->updateOrderStatus($orderId, $status, $note, $userId);
-
-            // Nếu đơn hàng đã giao thành công và thanh toán COD
-            $order = $this->orderModel->getOrderById($orderId);
-            if ($status === 'DELIVERED' && $order['paymentMethod'] === 'CASH_ON_DELIVERY') {
-                $this->orderModel->updatePaymentStatus($orderId, 'PAID');
-            }
+            // Xử lý các trường hợp đặc biệt trước
             if ($status === 'RETURN_APPROVED') {
                 $this->orderModel->updateOrderStatus($orderId, $status, 'Đã chấp nhận yêu cầu hoàn trả', $userId);
-            }
-
-            if ($status === 'RETURNED') {
+            } 
+            else if ($status === 'RETURNED') {
                 $this->orderModel->processReturn($orderId);
-                $this->orderModel->updateOrderStatus($orderId, 'RETURNED', 'Đã hoàn trả thành công', $userId);
+                $this->orderModel->updateOrderStatus($orderId, $status, 'Đã hoàn trả thành công', $userId);
+            }
+            else {
+                // Cập nhật trạng thái đơn hàng thông thường
+                $this->orderModel->updateOrderStatus($orderId, $status, $note, $userId);
+
+                // Xử lý thanh toán COD khi giao hàng thành công
+                if ($status === 'DELIVERED') {
+                    $order = $this->orderModel->getOrderById($orderId);
+                    if ($order['paymentMethod'] === 'CASH_ON_DELIVERY') {
+                        $this->orderModel->updatePaymentStatus($orderId, 'PAID');
+                    }
+                }
             }
 
             $this->db->commit();
             $_SESSION['success'] = 'Cập nhật trạng thái đơn hàng thành công';
-            // Lấy lại thông tin đơn hàng mới nhất
-            $updatedOrder = $this->orderModel->getOrderById($orderId);
-
-            // Render lại view với dữ liệu mới
-            return $this->view('employee/OrdersManagement/order-detail', [
-                'title' => 'Chi tiết đơn hàng #' . $orderId,
-                'order' => $updatedOrder
-            ]);
+            
+            // Chuyển hướng sau khi xử lý thành công
+            $this->redirect("employee/order/{$orderId}");
 
         } catch (Exception $e) {
-            $_SESSION['error'] = $e->getMessage();
             $this->db->rollBack();
-            $order = $this->orderModel->getOrderById($orderId);
-            return $this->view('employee/OrdersManagement/order-detail', [
-                'title' => 'Chi tiết đơn hàng #' . $orderId,
-                'order' => $order
-            ]);
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect("employee/order/{$orderId}");
         }
     }
 
@@ -288,7 +283,7 @@ class EmployeeController extends BaseController
     {
         try {
             $orderId = $_POST['orderId'];
-            $status = $_POST['status'] === 'PAID' ? 'CONFIRMED' : 'FAILED';
+            $status = $_POST['status'];
             $userId = $this->auth->getUserId();
             // Cập nhật trạng thái thanh toán
             $this->orderModel->updatePaymentStatus($orderId, $status, $userId);
