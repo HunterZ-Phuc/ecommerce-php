@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Core;
-//sửa ở đây point 1
+
 class Router
 {
     protected $routes = [];

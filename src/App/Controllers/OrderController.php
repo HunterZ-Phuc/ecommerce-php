@@ -8,7 +8,6 @@ use App\Models\Address;
 use App\Models\ProductVariant;
 use Core\Database;
 use Exception;
-use App\Helpers\OrderHelper;
 
 class OrderController extends BaseController
 {
@@ -32,8 +31,6 @@ class OrderController extends BaseController
     public function checkout()
     {
         try {
-            error_log('=== START CHECKOUT ===');
-
             // 1. Kiểm tra user đã đăng nhập
             $userId = $this->auth->getUserId();
             if (!$userId) {
@@ -44,8 +41,6 @@ class OrderController extends BaseController
 
             // 2. Lấy danh sách variantId được chọn từ POST request
             $selectedVariantIds = isset($_POST['selectedItems']) ? $_POST['selectedItems'] : [];
-            error_log('Selected Variant IDs from POST: ' . print_r($selectedVariantIds, true));
-
             if (empty($selectedVariantIds)) {
                 $_SESSION['error'] = 'Vui lòng chọn sản phẩm để mua';
                 $this->redirect('cart');
@@ -54,7 +49,6 @@ class OrderController extends BaseController
 
             // 3. Lấy thông tin giỏ hàng cho các sản phẩm được chọn
             $cartItems = $this->cartModel->getSelectedCartItems($userId, $selectedVariantIds);
-            error_log('Cart Items: ' . print_r($cartItems, true));
 
             if (empty($cartItems)) {
                 $_SESSION['error'] = 'Không tìm thấy sản phẩm đã chọn';
@@ -87,8 +81,6 @@ class OrderController extends BaseController
             // 7. Lưu thông tin vào session để sử dụng ở bước tạo đơn hàng
             $_SESSION['selected_items'] = $cartItems;
             $_SESSION['selected_variant_ids'] = $selectedVariantIds;
-
-            error_log('Session after save: ' . print_r($_SESSION, true));
 
             // 8. Render view checkout
             $this->view('order/checkout', [
@@ -273,21 +265,10 @@ class OrderController extends BaseController
             $this->redirect("order/detail/{$id}");
         }
     }
-
+    
+    // TODO: Tạo QR code từ thông tin ngân hàng và đơn hàng rồi lưu vào database
     private function generateQRCode($order)
     {
-        // Thông tin tài khoản ngân hàng (có thể lấy từ config)
-        $bankInfo = [
-            'accountName' => 'NGUYEN VAN A',
-            'accountNumber' => '123456789',
-            'bankName' => 'VIETCOMBANK',
-            'amount' => $order['totalAmount'],
-            'description' => 'Thanh toan don hang #' . $order['id']
-        ];
-
-        // Tạo nội dung QR (có thể sử dụng thư viện để tạo QR thực tế)
-        $qrContent = json_encode($bankInfo);
-
         // Đường dẫn đến ảnh QR mẫu (tạm thời)
         return '/ecommerce-php/public/assets/images/qr_banking.png';
     }
@@ -304,7 +285,6 @@ class OrderController extends BaseController
             if (!$order || $order['userId'] != $userId) {
                 throw new Exception('Không tìm thấy đơn hàng');
             }
-
         
             // Cập nhật trạng thái thanh toán sang chờ xác nhận
             $this->orderModel->updatePaymentStatusByUser($id, 'PROCESSING', $userId);
@@ -321,9 +301,6 @@ class OrderController extends BaseController
     public function success($id)
     {
         try {
-            error_log('=== START ORDER SUCCESS PAGE ===');
-            error_log('Order ID: ' . $id);
-
             $userId = $this->auth->getUserId();
             if (!$userId) {
                 error_log('User not logged in');
@@ -333,7 +310,6 @@ class OrderController extends BaseController
 
             // Lấy thông tin đơn hàng
             $order = $this->orderModel->getOrderDetails($id);
-            error_log('Order details: ' . print_r($order, true));
 
             if (!$order) {
                 error_log('Order not found');
@@ -345,14 +321,6 @@ class OrderController extends BaseController
                 throw new Exception('Không có quyền xem đơn hàng này');
             }
 
-            // Kiểm tra view có tồn tại
-            $viewPath = ROOT_PATH . '/src/App/Views/order/success.php';
-            if (!file_exists($viewPath)) {
-                error_log('View file not found: ' . $viewPath);
-                throw new Exception('Không tìm thấy template');
-            }
-
-            error_log('Rendering view with data');
             $this->view('order/success', [
                 'title' => 'Đặt hàng thành công',
                 'order' => $order,
@@ -426,12 +394,6 @@ class OrderController extends BaseController
                 return;
             }
 
-            // Thêm các trạng thái và màu sắc
-            $order['statusText'] = OrderHelper::getOrderStatusText($order['orderStatus']);
-            $order['statusColor'] = OrderHelper::getOrderStatusClass($order['orderStatus']);
-            $order['paymentStatusText'] = OrderHelper::getPaymentStatusText($order['paymentStatus']);
-            $order['paymentStatusColor'] = OrderHelper::getPaymentStatusClass($order['paymentStatus']);
-
             $this->view('order/detail', [
                 'title' => 'Chi tiết đơn hàng #' . $id,
                 'order' => $order
@@ -492,19 +454,11 @@ class OrderController extends BaseController
             $orderId = $id;
             $status = 'DELIVERED';
             $note = 'Đã nhận hàng và thanh toán';
-            $userId = $this->auth->getUserId();
 
             // Cập nhật trạng thái đơn hàng
             $this->orderModel->updateOrderStatus($orderId, $status, $note, $userId);
 
-            // Lấy thông tin đơn hàng
-            $order = $this->orderModel->getOrderById($orderId);
-
-            // Nếu là thanh toán COD và đã giao hàng thành công
-            if ($order['paymentMethod'] === 'CASH_ON_DELIVERY') {
-                // Cập nhật trạng thái thanh toán
-                $this->orderModel->updatePaymentStatus($orderId, 'PAID', 'Thanh toán khi nhận hàng');
-            }
+            $this->orderModel->confirmPayment($orderId, 'PAID', 'Thanh toán thành công');
 
             $this->db->commit();
             $_SESSION['success'] = 'Xác nhận giao hàng thành công';
@@ -518,7 +472,6 @@ class OrderController extends BaseController
     }
 
     // Cập nhật yêu cầu hoàn trả
-
     public function returnRequest($id)
     {
         try {

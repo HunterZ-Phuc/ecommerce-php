@@ -176,7 +176,7 @@ class ProductController extends BaseController
                     'success' => true,
                     'message' => 'Thêm sản phẩm thành công'
                 ]);
-                exit; // Đảm bảo dừng thực thi ngay lập tức
+                exit;
             } catch (Exception $e) {
                 $this->db->rollBack();
                 header('Content-Type: application/json');

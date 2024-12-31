@@ -300,6 +300,29 @@ class Order extends BaseModel
         }
     }
 
+    // Xác nhận đã thanh toán
+    public function confirmPayment($orderId, $status, $userId)
+    {
+        try {
+            // 1. Cập nhật trạng thái thanh toán trong bảng orders
+            $sql = "UPDATE orders 
+                    SET paymentStatus = :status,
+                        note = 'Đã xác nhận thanh toán',
+                        updatedAt = CURRENT_TIMESTAMP
+                    WHERE id = :orderId";
+                
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                'status' => $status,
+                'orderId' => $orderId
+            ]);
+
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            throw new Exception("Lỗi khi xác nhận thanh toán: " . $e->getMessage());
+        }
+    }
+
 
     // Cập nhật QR image
     public function updateQRImage($orderId, $qrImage)

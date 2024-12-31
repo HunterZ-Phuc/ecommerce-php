@@ -18,8 +18,7 @@ START TRANSACTION;
 SET time_zone = "+00:00";
 SET FOREIGN_KEY_CHECKS = 0;
 
--- 1. Các bảng độc lập (không có khóa ngoại)
-
+-- Bảng mã OTP (One Time Password) dùng để lấy lại mật khẩu
 CREATE TABLE otps (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `accountId` varchar(255) NOT NULL,
@@ -31,7 +30,7 @@ CREATE TABLE otps (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 2. Các bảng người dùng cơ sở
+-- Bản người dùng (Chứa thông tin người dùng của cửa hàng)
 CREATE TABLE users (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `avatar` varchar(255) NOT NULL,
@@ -51,6 +50,7 @@ CREATE TABLE users (
   UNIQUE INDEX `unique_phone` (`phone`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- Bảng quản trị viên (Chứa thông tin quản trị viên của cửa hàng)
 CREATE TABLE admins (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(50) NOT NULL,
@@ -64,6 +64,7 @@ CREATE TABLE admins (
   UNIQUE INDEX `unique_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- Bảng nhân viên (Chứa thông tin nhân viên của cửa hàng)
 CREATE TABLE employees (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `avatar` varchar(255) NOT NULL,
@@ -84,7 +85,7 @@ CREATE TABLE employees (
   UNIQUE INDEX `unique_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 3. Các bảng phụ thuộc người dùng
+-- Bản địa chỉ (Chứa các địa chỉ của người dùng)
 CREATE TABLE addresses (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `userId` int(11) NOT NULL,
@@ -98,7 +99,7 @@ CREATE TABLE addresses (
   FOREIGN KEY (`userId`) REFERENCES users(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 4. Các bảng sản phẩm cơ sở
+-- Bảng sản phẩm (Lưu thông tin cơ bản của một sản phẩm)
 CREATE TABLE products (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `productName` varchar(255) NOT NULL,
@@ -122,7 +123,7 @@ CREATE TABLE products (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 5. Các bảng phụ thuộc sản phẩm
+-- Bảng sản phẩm phân loại của sản phẩm (Ví dụ: Màu sắc, Kích thước)
 CREATE TABLE variant_types (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `productId` int(11) NOT NULL,
@@ -133,6 +134,7 @@ CREATE TABLE variant_types (
   FOREIGN KEY (`productId`) REFERENCES products(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- Bảng giá trị biến thể (Ví dụ: Đỏ, Xanh, Vàng)
 CREATE TABLE variant_values (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `variantTypeId` int(11) NOT NULL,
@@ -143,6 +145,7 @@ CREATE TABLE variant_values (
   FOREIGN KEY (`variantTypeId`) REFERENCES variant_types(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- Bảng biến thể sản phẩm (Ví dụ: Sản phẩm A có 3 biến thể: Đỏ, Xanh, Vàng)
 CREATE TABLE product_variants (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `productId` int(11) NOT NULL,
@@ -156,6 +159,7 @@ CREATE TABLE product_variants (
   UNIQUE KEY `unique_sku` (`sku`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- Bảng kết hợp giữa biến thể và giá trị biến thể (Ví dụ: Màu sắc: Đỏ, Trọng lượng: 1kg)
 CREATE TABLE variant_combinations (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `productVariantId` int(11) NOT NULL,
@@ -168,6 +172,7 @@ CREATE TABLE variant_combinations (
   UNIQUE KEY `unique_combination` (`productVariantId`, `variantValueId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- Bảng hình ảnh sản phẩm (Gồm ảnh chính và ảnh biến thể)
 CREATE TABLE product_images (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `productId` int(11) NOT NULL,
@@ -183,7 +188,7 @@ CREATE TABLE product_images (
   CONSTRAINT `unique_variant_image` UNIQUE (`variantId`) -- Đảm bảo 1 biến thể chỉ có 1 ảnh
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 6. Các bảng giỏ hàng và đơn hàng
+-- Bảng giỏ hàng
 CREATE TABLE carts (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `userId` int(11) NOT NULL,
@@ -197,6 +202,7 @@ CREATE TABLE carts (
   UNIQUE KEY `unique_cart_item` (`userId`, `variantId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- Bảng đơn hàng chứa thông tin đơn hàng của khách hàng
 CREATE TABLE orders (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `userId` int(11) NOT NULL,
@@ -231,6 +237,7 @@ CREATE TABLE orders (
   FOREIGN KEY (`addressId`) REFERENCES addresses(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- Các bảng chi tiết giỏ hàng và đơn hàng
 CREATE TABLE items (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `productId` int(11) NOT NULL,
@@ -244,7 +251,7 @@ CREATE TABLE items (
   FOREIGN KEY (`orderId`) REFERENCES orders(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Bảng chi tiết đơn hàng
+-- Bảng lưu thông tin chi tiết các sản phẩm của đơn hàng
 CREATE TABLE order_items (
     id INT PRIMARY KEY AUTO_INCREMENT,
     orderId INT NOT NULL,
@@ -268,6 +275,7 @@ CREATE TABLE order_history (
     FOREIGN KEY (createdBy) REFERENCES users(id)
 );
 
+-- Bảng thanh toán (chứa thông tin thanh toán của đơn hàng)
 CREATE TABLE payments (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `orderId` INT NOT NULL,
@@ -316,7 +324,7 @@ DO
   WHERE isUsed = true 
   OR expiredAt < CURRENT_TIMESTAMP;
 
--- Các câu lệnh trigger
+-- Trigger
 
 DELIMITER //
 CREATE TRIGGER after_order_completed

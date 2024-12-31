@@ -1,6 +1,6 @@
 <?php
 namespace Core;
-//sửa ở đây point 1
+
 class App
 {
     private $router;

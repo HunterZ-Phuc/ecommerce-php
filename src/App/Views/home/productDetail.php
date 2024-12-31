@@ -17,8 +17,11 @@ error_log("View received product data: " . json_encode($product));
                 <div class="variant-image-container d-flex gap-2 mt-3">
                     <?php if (!empty($product['images'])): ?>
                         <?php foreach ($product['images'] as $image): ?>
-                            <img src="<?= '/ecommerce-php/public' . $image['imageUrl'] ?>" class="img-thumbnail"
-                                style="width: 80px; height: 80px; object-fit: cover;" alt="Product thumbnail">
+                            <img src="<?= '/ecommerce-php/public' . $image['imageUrl'] ?>" 
+                                class="img-thumbnail thumbnail-image"
+                                style="width: 80px; height: 80px; object-fit: cover;" 
+                                alt="Product thumbnail"
+                                onclick="updateMainImage(this.src)">
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
@@ -73,9 +76,6 @@ error_log("View received product data: " . json_encode($product));
                     <?php endforeach; ?>
                 </div>
             </div>
-
-            <!-- Mua ngay -->
-            <button class="btn btn-primary me-2">Mua ngay</button>
 
             <!-- Form thêm vào giỏ hàng -->
             <form id="addToCartForm" class="mt-3" action="/ecommerce-php/cart/add" method="POST">
@@ -194,6 +194,10 @@ error_log("View received product data: " . json_encode($product));
                 alert('Đã xảy ra lỗi, vui lòng thử lại.');
             });
     });
+
+    function updateMainImage(src) {
+        mainImage.src = src;
+    }
 </script>
 
 

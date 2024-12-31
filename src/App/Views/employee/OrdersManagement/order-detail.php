@@ -1,7 +1,7 @@
 <?php
 use App\Helpers\OrderHelper;
 ?>
-<!-- sửa 4 -->
+
 <div class="container-fluid">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -192,8 +192,8 @@ use App\Helpers\OrderHelper;
                 </div>
             </div>
 
-            <!-- Cập nhật trạng thái thanh toán -->
-            <?php if ($order['paymentMethod'] === 'QR_TRANSFER' && ($order['paymentStatus'] === 'PENDING' || $order['paymentStatus'] === 'PROCESSING')): ?>
+            <!-- Cập nhật trạng thái thanh toán nếu đơn hàng có phương thức thanh toán là QR_TRANSFER và trạng thái thanh toán là PROCESSING -->
+            <?php if ($order['paymentMethod'] === 'QR_TRANSFER' && ($order['paymentStatus'] === 'PROCESSING')): ?>
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="card-title mb-0">Xác nhận thanh toán</h5>
@@ -205,7 +205,7 @@ use App\Helpers\OrderHelper;
                                 <label class="form-label">Trạng thái thanh toán</label>
                                 <select name="status" class="form-select" required>
                                     <option value="">Chọn trạng thái</option>
-                                    <option value="PAID">Đã thanh toán</option>
+                                    <option value="CONFIRMED">Đã chuyển khoản thành công</option>
                                     <option value="FAILED">Thanh toán thất bại</option>
                                 </select>
                             </div>
@@ -215,6 +215,7 @@ use App\Helpers\OrderHelper;
                 </div>
             <?php endif; ?>
 
+            <!-- Cập nhật trạng thái thanh toán nếu đơn hàng có phương thức thanh toán là QR_TRANSFER và trạng thái thanh toán là CONFIRMED và trạng thái đơn hàng là RETURNED -->
             <?php if ($order['paymentMethod'] === 'QR_TRANSFER' && ($order['orderStatus'] === 'RETURNED' && $order['paymentStatus'] === 'CONFIRMED')): ?>
                 <div class="card mb-4">
                     <div class="card-header">

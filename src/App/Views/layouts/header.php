@@ -44,7 +44,6 @@
 </head>
 
 <body>
-    <!-- sửa ở đây point 1 -->
     <nav class="navbar navbar-expand-lg" style="background-color: #f8f9fa;">
         <div class="container">
             <!-- Logo -->

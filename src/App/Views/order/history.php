@@ -1,3 +1,7 @@
+<?php
+use App\Helpers\OrderHelper;
+?>
+
 <div class="container my-5">
     <div class="row">
         <div class="col-md-12">
@@ -34,13 +38,14 @@
                                             <td><?= date('d/m/Y H:i', strtotime($order['createdAt'])) ?></td>
                                             <td><?= number_format($order['totalAmount']) ?>đ</td>
                                             <td>
-                                                <span class="badge bg-<?= $order['statusColor'] ?>">
-                                                    <?= $order['statusText'] ?>
+                                                <span class="badge <?= OrderHelper::getOrderStatusClass($order['orderStatus']) ?>">
+                                                <?= OrderHelper::getOrderStatusText($order['orderStatus']) ?>
                                                 </span>
                                             </td>
                                             <td>
-                                                <span class="badge bg-<?= $order['paymentStatusColor'] ?>">
-                                                    <?= $order['paymentStatusText'] ?>
+                                            <!--  -->
+                                                <span class="badge <?= OrderHelper::getPaymentStatusClass($order['paymentStatusColor']) ?>">
+                                                    <?= OrderHelper::getPaymentStatusText($order['paymentStatus']) ?>
                                                 </span>
                                             </td>
                                             <td>
