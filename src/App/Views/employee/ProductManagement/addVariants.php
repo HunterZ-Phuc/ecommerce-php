@@ -28,7 +28,6 @@ $combo = array("Lẻ", "Combo");
                     <div class="variant-value d-flex align-items-center gap-2 mb-2">
                         <select name="variant_values[0][]" class="form-control" required>
                             <option value="">Chọn giá trị</option>
-                            // Kiểm tra xem variant_types[] có giá trị nào thì hiển thị mảng giá trị tương ứng
                             <option value="" disabled>Chọn phân loại trước</option>
                         </select>
                         <button type="button" class="btn btn-danger btn-sm remove-value">
@@ -241,7 +240,7 @@ $combo = array("Lẻ", "Combo");
             }
         });
 
-        // Sửa lại sự kiện cho nút "Hoàn tất phân loại hàng"
+        // Sự kiện cho nút "Hoàn tất phân loại hàng"
         document.getElementById('generateCombinations').addEventListener('click', function () {
             const variantTypes = [];
             const variantValues = [];

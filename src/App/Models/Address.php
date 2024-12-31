@@ -10,6 +10,7 @@ class Address extends BaseModel
 {
     protected $table = 'addresses';
 
+    // Tạo địa chỉ mới
     public function create($data)
     {
         try {
@@ -37,6 +38,7 @@ class Address extends BaseModel
         }
     }
 
+    // Cập nhật địa chỉ
     public function update($id, $data)
     {
         try {
@@ -76,6 +78,7 @@ class Address extends BaseModel
         }
     }
 
+    // Thiết lập địa chỉ mặc định
     public function setDefault($id, $userId)
     {
         try {
@@ -104,6 +107,7 @@ class Address extends BaseModel
         }
     }
 
+    // Kiểm tra xem địa chỉ có phải là mặc định không
     public function isDefault($id, $userId)
     {
         try {
@@ -117,6 +121,7 @@ class Address extends BaseModel
         }
     }
 
+    // Lấy địa chỉ theo id và userId
     public function getById($id, $userId)
     {
         try {
@@ -130,6 +135,7 @@ class Address extends BaseModel
         }
     }
 
+    // Lấy tất cả địa chỉ của user
     public function getAllByUserId($userId)
     {
         try {
@@ -143,6 +149,7 @@ class Address extends BaseModel
         }
     }
 
+    // Lấy địa chỉ mặc định của user
     public function findByUserId($userId)
     {
         $sql = "SELECT * FROM {$this->table} WHERE userId = :userId";
@@ -151,6 +158,7 @@ class Address extends BaseModel
         return $stmt->fetchAll();
     }
 
+    // Xóa địa chỉ theo id và userId
     public function deleteWithUserId($id, $userId)
     {
         try {
@@ -174,6 +182,7 @@ class Address extends BaseModel
         }
     }
 
+    // Xóa địa chỉ theo id
     public function delete($id)
     {
         try {

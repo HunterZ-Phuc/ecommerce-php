@@ -6,16 +6,16 @@
                 <h5 class="fw-bold mb-3">Trang Chính</h5>
                 <ul class="list-unstyled">
                     <li class="mb-2">
-                        <a href="../cart.php" class="text-white text-decoration-none">Giỏ Hàng</a>
+                        <a href="<?php ROOT_PATH ?> ./cart" class="text-white text-decoration-none">Giỏ Hàng</a>
                     </li>
                     <li class="mb-2">
-                        <a href="../shop.php" class="text-white text-decoration-none">Cửa Hàng</a>
+                        <a href="<?php ROOT_PATH ?> ./" class="text-white text-decoration-none">Cửa Hàng</a>
                     </li>
                     <li class="mb-2">
-                        <a href="../contact.php" class="text-white text-decoration-none">Liên Hệ</a>
+                        <a href="<?php ROOT_PATH ?> ./contact" class="text-white text-decoration-none">Liên Hệ</a>
                     </li>
                     <li class="mb-2">
-                        <a href="my_account.php" class="text-white text-decoration-none">Tài Khoản</a>
+                        <a href="<?php ROOT_PATH ?> ./user/profile" class="text-white text-decoration-none">Tài Khoản</a>
                     </li>
                 </ul>
             </div>
@@ -23,6 +23,20 @@
             <!-- Cột 2: Danh mục sản phẩm -->
             <div class="col-md-3 col-sm-6 mb-4">
                 <h5 class="fw-bold mb-3">Danh Mục Sản Phẩm</h5>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <a href="<?php ROOT_PATH ?> ./search?category=FRUITS&minPrice=&maxPrice=" class="text-white text-decoration-none">Trái Cây</a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="<?php ROOT_PATH ?> ./search?category=VEGETABLES&minPrice=&maxPrice=" class="text-white text-decoration-none">Rau Củ</a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="<?php ROOT_PATH ?> ./search?category=GRAINS&minPrice=&maxPrice=" class="text-white text-decoration-none">Ngũ Cốc</a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="<?php ROOT_PATH ?> ./search?category=OTHERS&minPrice=&maxPrice=" class="text-white text-decoration-none">Khác</a>
+                    </li>
+                </ul>
             </div>
 
             <!-- Cột 3: Thông tin liên hệ -->

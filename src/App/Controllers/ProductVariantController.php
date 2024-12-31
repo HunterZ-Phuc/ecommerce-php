@@ -29,7 +29,7 @@ class ProductVariantController extends BaseController
         }
     }
 
-    // Sửa biến thể
+    // Cập nhật biến thể
     public function edit($id)
     {
         $variant = $this->variantModel->findById($id);
@@ -46,7 +46,7 @@ class ProductVariantController extends BaseController
         }
 
         $this->view('employee/ProductManagement/edit_variant', [
-            'title' => 'Sửa Biến thể',
+            'title' => 'Cập nhật biến thể',
             'variant' => $variant
         ]);
     }

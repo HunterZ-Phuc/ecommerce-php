@@ -20,9 +20,93 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Quản lý Sản phẩm</h1>
-    <button type="button" class="btn btn-primary" id="addProductButton">
+    <button type="button" class="btn btn-primary" id="toggleFormBtn">
         Thêm Sản phẩm
     </button>
+</div>
+
+<!-- Thêm form container có thể ẩn/hiện -->
+<div id="addProductForm" class="card mb-4" style="display: none;">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#basicInfo">
+                    Thông tin cơ bản
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#variants">
+                    Phân loại hàng
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="card-body">
+        <form action="/ecommerce-php/employee/product-management/create" method="POST" enctype="multipart/form-data" id="createProductForm">
+            <div class="tab-content">
+                <!-- Tab thông tin cơ bản -->
+                <div class="tab-pane fade show active" id="basicInfo">
+                    <div class="mb-3">
+                        <label class="form-label">Danh mục sản phẩm</label>
+                        <select name="category" class="form-control" required>
+                            <option value="">Chọn danh mục</option>
+                            <option value="FRUITS">Trái Cây</option>
+                            <option value="VEGETABLES">Rau Củ</option>
+                            <option value="GRAINS">Ngũ Cốc</option>
+                            <option value="OTHERS">Khác</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Tên sản phẩm</label>
+                        <input type="text" name="productName" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Xuất xứ</label>
+                        <input type="text" name="origin" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Mô tả</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <!-- Mở comment của thẻ div dưới đây khi muốn tạo nhiều sản phẩm để test chương trình -->
+
+                    <!-- <div class="mb-3">
+                        <label class="form-label">Số lượng sản phẩm muốn tạo</label>
+                        <input type="number" name="numberOfProducts" class="form-control" value="1" min="1" max="20">
+                        <small class="text-muted">Nhập số lượng sản phẩm giống hệt nhau bạn muốn tạo (tối đa 20)</small>
+                    </div> -->
+
+                    <div class="mb-3">
+                        <label class="form-label">Ảnh sản phẩm</label>
+                        <input type="file" name="images[]" class="form-control" multiple>
+                    </div>
+
+                    <button type="button" class="btn btn-primary" onclick="switchToVariants()">
+                        Tiếp tục
+                    </button>
+                </div>
+
+                <!-- Tab phân loại hàng -->
+                <div class="tab-pane fade" id="variants">
+                    <?php require_once ROOT_PATH . '/src/App/Views/employee/ProductManagement/addVariants.php'; ?>
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-secondary" onclick="switchToBasicInfo()">
+                            Quay lại
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Lưu sản phẩm
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- Thêm form tìm kiếm -->
@@ -115,7 +199,7 @@
     </tbody>
 </table>
 
-<!-- Thêm phân trang -->
+<!-- Phân trang -->
 <?php if ($totalPages > 1): ?>
     <nav aria-label="Page navigation" class="mt-4">
         <ul class="pagination justify-content-center">
@@ -147,55 +231,94 @@
 <?php endif; ?>
 
 <?php
-require_once ROOT_PATH . '/src/App/Views/employee/ProductManagement/create.php';
 require_once ROOT_PATH . '/src/App/Views/employee/ProductManagement/edit.php';
 require_once ROOT_PATH . '/src/App/Views/employee/ProductManagement/delete.php';
 ?>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
-        const createModal = new bootstrap.Modal(document.getElementById('createModal'));
-
-        // Xử lý sự kiện khi modal bị ẩn
-        document.getElementById('createModal').addEventListener('hidden.bs.modal', function () {
-            // Xóa backdrop và class modal-open khỏi body
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) {
-                backdrop.remove();
-            }
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-        });
-
-        document.getElementById('categoryModal').addEventListener('hidden.bs.modal', function () {
-            // Xóa backdrop và class modal-open khỏi body
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) {
-                backdrop.remove();
-            }
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-        });
-
-        // Chỉ để lại xử lý hiển thị modal
-        document.getElementById('addProductButton').addEventListener('click', function () {
-            categoryModal.show();
-        });
-
-        document.getElementById('confirmCategory').addEventListener('click', function () {
-            const selectedCategory = document.getElementById('productCategory').value;
-            if (selectedCategory) {
-                document.getElementById('selectedCategoryInput').value = selectedCategory;
-                categoryModal.hide();
-                setTimeout(() => {
-                    createModal.show();
-                }, 500);
-            } else {
-                alert('Vui lòng chọn danh mục sản phẩm.');
-            }
-        });
+document.addEventListener('DOMContentLoaded', function() {
+    const formContainer = document.getElementById('addProductForm');
+    const toggleBtn = document.getElementById('toggleFormBtn');
+    const createProductForm = document.getElementById('createProductForm');
+    
+    // Xử lý ẩn/hiện form
+    toggleBtn.addEventListener('click', function() {
+        if (formContainer.style.display === 'none') {
+            formContainer.style.display = 'block';
+            toggleBtn.textContent = 'Ẩn form';
+        } else {
+            formContainer.style.display = 'none';
+            toggleBtn.textContent = 'Thêm Sản phẩm';
+        }
     });
+
+    // Xử lý form submit
+    createProductForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const submitButton = this.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.innerHTML = 'Đang xử lý...';
+
+        try {
+            const formData = new FormData(this);
+            const numberOfProducts = parseInt(formData.get('numberOfProducts')) || 1;
+
+            if (numberOfProducts < 1 || numberOfProducts > 20) {
+                throw new Error('Số lượng sản phẩm phải từ 1 đến 20');
+            }
+
+            // Tạo mảng promises để xử lý nhiều request cùng lúc
+            const createPromises = [];
+
+            for (let i = 0; i < numberOfProducts; i++) {
+                const clonedFormData = new FormData(this);
+                // Xóa trường numberOfProducts khỏi formData gửi đi
+                clonedFormData.delete('numberOfProducts');
+                
+                createPromises.push(
+                    fetch(this.action, {
+                        method: 'POST',
+                        body: clonedFormData
+                    }).then(response => response.json())
+                );
+            }
+
+            // Chờ tất cả requests hoàn thành
+            const results = await Promise.all(createPromises);
+            
+            // Kiểm tra kết quả
+            const hasError = results.some(result => !result.success);
+
+            if (!hasError) {
+                alert(`Đã tạo thành công ${numberOfProducts} sản phẩm!`);
+                window.location.reload();
+            } else {
+                const errors = results
+                    .filter(result => !result.success)
+                    .map(result => result.error)
+                    .join('\n');
+                throw new Error(`Có lỗi xảy ra:\n${errors}`);
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi thêm sản phẩm!');
+        } finally {
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Lưu sản phẩm';
+        }
+    });
+
+    // Hàm chuyển tab
+    window.switchToVariants = function() {
+        const variantsTab = document.querySelector('a[href="#variants"]');
+        new bootstrap.Tab(variantsTab).show();
+    }
+
+    window.switchToBasicInfo = function() {
+        const basicInfoTab = document.querySelector('a[href="#basicInfo"]');
+        new bootstrap.Tab(basicInfoTab).show();
+    }
+});
 </script>

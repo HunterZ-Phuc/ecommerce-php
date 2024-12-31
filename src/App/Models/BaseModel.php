@@ -74,6 +74,7 @@ class BaseModel
         return $stmt->execute(['id' => $id]);
     }
 
+    // Cập nhật mật khẩu
     public function updatePassword($id, $hashedPassword)
     {
         try {
