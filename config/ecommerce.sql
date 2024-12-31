@@ -253,24 +253,24 @@ CREATE TABLE items (
 
 -- Bảng lưu thông tin chi tiết các sản phẩm của đơn hàng
 CREATE TABLE order_items (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    orderId INT NOT NULL,
-    variantId INT NOT NULL,
-    quantity INT NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `id` INT PRIMARY KEY AUTO_INCREMENT,
+    `orderId` INT NOT NULL,
+    `variantId` INT NOT NULL,
+    `quantity` INT NOT NULL,
+    `price` DECIMAL(10,2) NOT NULL,
+    `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (variantId) REFERENCES product_variants(id) ON DELETE CASCADE
 );
 
 -- Bảng lịch sử đơn hàng
 CREATE TABLE order_history (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    orderId INT NOT NULL,
-    status ENUM('PENDING', 'PROCESSING', 'CONFIRMED', 'SHIPPING', 'RETURN_REQUEST', 'RETURN_APPROVED', 'RETURNED', 'DELIVERED', 'CANCELLED') NOT NULL,
-    note TEXT,
-    createdBy INT NOT NULL,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `id` INT PRIMARY KEY AUTO_INCREMENT,
+    `orderId` INT NOT NULL,
+    `status` ENUM('PENDING', 'PROCESSING', 'CONFIRMED', 'SHIPPING', 'RETURN_REQUEST', 'RETURN_APPROVED', 'RETURNED', 'DELIVERED', 'CANCELLED') NOT NULL,
+    `note` TEXT,
+    `createdBy` INT NOT NULL,
+    `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (orderId) REFERENCES orders(id),
     FOREIGN KEY (createdBy) REFERENCES users(id)
 );
